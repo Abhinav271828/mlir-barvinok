@@ -79,6 +79,8 @@ inline Fraction reduce(const Fraction &f) {
   return Fraction(f.num / gcd, f.den / gcd);
 }
 
+inline Fraction abs(const Fraction &f)  { return Fraction(abs(f.num), f.den); }
+
 inline Fraction operator-(const Fraction &x) { return Fraction(-x.num, x.den); }
 
 inline bool operator<(const Fraction &x, const Fraction &y) {

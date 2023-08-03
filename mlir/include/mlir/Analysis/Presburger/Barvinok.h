@@ -27,7 +27,7 @@ using PolyhedronH = IntegerRelation;
 using PolyhedronV = Matrix<MPInt>;
 using ConeH = PolyhedronH;
 using ConeV = PolyhedronV;
-using Point = SmallVector<MPInt, 16>;
+using Point = MutableArrayRef<Fraction>;
 
 // Describe the type of generating function
 // used to enumerate the integer points in a polytope.
@@ -51,8 +51,8 @@ private:
 // If it has more rays than the dimension, return 0.
 MPInt getIndex(ConeV);
 
-// Get the smallest vector in the basis described by the rays of the cone,
-// and the coefficients needed to express it in that basis.
+// Get the smallest vector in the basis described by the inverse of the 
+// rays of the cone, and the coefficients needed to express it in that basis.
 std::pair<Point, SmallVector<MPInt, 16>> getSamplePoint(ConeV);
 
 // Get the dual of a cone in H-representation, returning the V-representation of it.

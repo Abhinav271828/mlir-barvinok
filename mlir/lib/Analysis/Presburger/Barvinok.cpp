@@ -8,6 +8,7 @@
 
 #include "mlir/Analysis/Presburger/Barvinok.h"
 #include "mlir/Analysis/Presburger/IntegerRelation.h"
+#include "mlir/Analysis/Presburger/Matrix.h"
 #include "mlir/Analysis/Presburger/LinearTransform.h"
 #include "mlir/Analysis/Presburger/PWMAFunction.h"
 #include "mlir/Analysis/Presburger/PresburgerRelation.h"
@@ -87,6 +88,74 @@ MPInt mlir::presburger::getIndex(ConeV cone)
     // Convert to a linear transform in order to perform Gaussian elimination.
     LinearTransform lt(cone);
     return lt.determinant();
+}
+
+// Find the shortest point in the lattice spanned by the rows
+// of the cone, and the coefficients needed to express it in
+// that basis.
+std::pair<Point, SmallVector<MPInt, 16>> mlir::presburger::getSamplePoint(ConeV cone)
+{
+    unsigned r = cone.getNumRows();
+    unsigned c = cone.getNumColumns();
+    Matrix<Fraction> rayMatrix(r, c);
+    for (unsigned i = 0; i < r; i++)
+        for (unsigned j = 0; j < c; j++)
+            rayMatrix(i, j) = Fraction(cone(i, j), 1);
+    
+    // We now have a basis formed by the rows of A^{-1},
+    // which we reduce.
+    Matrix<Fraction> reducedBasis = rayMatrix.inverse();
+    reducedBasis.LLL(Fraction(3, 4));
+
+    // We now have to find the smallest vector in this
+    // basis by ∞-norm.
+    Fraction min_norm(1, 0);
+    unsigned min_i;
+    Fraction norm, absVal;
+    for (unsigned i = 0; i < r; i++)
+    {
+        norm = Fraction(0, 1);
+        for (unsigned j = 0; j < c; j++)
+        {
+            absVal = abs(reducedBasis(i, j));
+            norm = norm > absVal ? norm : absVal;
+        }
+
+        // We now have the norm of the i'th row.
+        if (min_norm > norm)
+        {
+            min_norm = norm;
+            min_i = i;
+        }
+    }
+
+    // Now we have the smallest vector in the lattice spanned
+    // by A^{-1} and the coefficients to express it in this basis.
+    Point lambda = reducedBasis.getRow(min_i);
+    SmallVector<Fraction> zFrac = rayMatrix.preMultiplyWithRow(lambda);
+
+    SmallVector<MPInt> z(r);
+    for (unsigned i = 0; i < r; i++)
+        z[i] = zFrac[i].getAsInteger();
+    
+    unsigned allNeg = 1;
+    for (unsigned i = 0; i < r; i++)
+        if (lambda[i] > Fraction(0, 1))
+        {
+            allNeg = 0;
+            break;
+        }
+
+    if (allNeg == 1)
+    {
+        for (unsigned i = 0; i < r; i++)
+        {
+            lambda[i] = - lambda[i];
+            z[i] = - z[i];
+        }
+    }
+
+    return std::make_pair(lambda, z);
 }
 
 // Decomposes a (not necessarily either unimodular or simplicial) cone
