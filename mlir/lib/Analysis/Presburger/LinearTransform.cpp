@@ -12,11 +12,11 @@
 using namespace mlir;
 using namespace presburger;
 
-LinearTransform::LinearTransform(Matrix &&oMatrix) : matrix(oMatrix) {}
-LinearTransform::LinearTransform(const Matrix &oMatrix) : matrix(oMatrix) {}
+LinearTransform::LinearTransform(Matrix<MPInt> &&oMatrix) : matrix(oMatrix) {}
+LinearTransform::LinearTransform(const Matrix<MPInt> &oMatrix) : matrix(oMatrix) {}
 
 std::pair<unsigned, LinearTransform>
-LinearTransform::makeTransformToColumnEchelon(const Matrix &m) {
+LinearTransform::makeTransformToColumnEchelon(const Matrix<MPInt> &m) {
   // Compute the hermite normal form of m. This, is by definition, is in column
   // echelon form.
   auto [h, u] = m.computeHermiteNormalForm();
@@ -69,7 +69,7 @@ IntegerRelation LinearTransform::applyTo(const IntegerRelation &rel) const {
 MPInt LinearTransform::determinant()
 {
     // Convert to column echelon form. Now `colEchelon` is lower triangular.
-    Matrix m = this->matrix;
+    Matrix<MPInt> m = this->matrix;
     LinearTransform colEchelon = makeTransformToColumnEchelon(m).second;
     MPInt determinant(1);
     for (unsigned i = 0; i < m.getNumColumns(); i++)

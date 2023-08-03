@@ -7,7 +7,7 @@ using namespace mlir;
 using namespace presburger;
 
 TEST(BarvinokTest, samplePoint) {
-    ConeV cone = makeMatrix(2, 2, {{2, 7}, {1, 0}});
+    ConeV cone = makeMatrix<MPInt>(2, 2, {{MPInt(2), MPInt(7)}, {MPInt(1), MPInt(0)}});
     std::pair<Point, SmallVector<MPInt>> p = getSamplePoint(cone);
 
     std::vector s = {Fraction(1, 7), Fraction(-2, 7)};

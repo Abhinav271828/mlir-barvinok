@@ -9,7 +9,6 @@
 #include "mlir/Analysis/Presburger/Barvinok.h"
 #include "mlir/Analysis/Presburger/IntegerRelation.h"
 #include "mlir/Analysis/Presburger/Matrix.h"
-#include "mlir/Analysis/Presburger/MatrixF.h"
 #include "mlir/Analysis/Presburger/LinearTransform.h"
 #include "mlir/Analysis/Presburger/PWMAFunction.h"
 #include "mlir/Analysis/Presburger/PresburgerRelation.h"
@@ -98,15 +97,15 @@ std::pair<Point, SmallVector<MPInt, 16>> mlir::presburger::getSamplePoint(ConeV 
 {
     unsigned r = cone.getNumRows();
     unsigned c = cone.getNumColumns();
-    MatrixF rayMatrix(r, c);
+    Matrix<Fraction> rayMatrix(r, c);
     for (unsigned i = 0; i < r; i++)
         for (unsigned j = 0; j < c; j++)
             rayMatrix(i, j) = Fraction(cone(i, j), 1);
     
     // We now have a basis formed by the rows of A^{-1},
     // which we reduce.
-    MatrixF reducedBasis = rayMatrix.inverse();
-    reducedBasis.LLL();
+    Matrix<Fraction> reducedBasis = rayMatrix.inverse();
+    reducedBasis.LLL(Fraction(3, 4));
 
     // We now have to find the smallest vector in this
     // basis by ∞-norm.
