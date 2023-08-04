@@ -85,9 +85,8 @@ MPInt mlir::presburger::getIndex(ConeV cone)
     {
         return MPInt(0);
     }
-    // Convert to a linear transform in order to perform Gaussian elimination.
-    LinearTransform lt(cone);
-    return lt.determinant();
+
+    return cone.determinant();
 }
 
 // Find the shortest point in the lattice spanned by the rows
@@ -156,6 +155,32 @@ std::pair<Point, SmallVector<MPInt, 16>> mlir::presburger::getSamplePoint(ConeV 
     }
 
     return std::make_pair(lambda, z);
+}
+
+SmallVector<std::pair<int, ConeV>, 16> mlir::presburger::unimodularDecompositionSimplicial(int sign, ConeV cone)
+{
+    MPInt index = getIndex(cone);
+    if (index == 1 || index == -1)
+    {
+        return SmallVector<std::pair<int, ConeV>, 1>(1, std::make_pair(sign, cone));
+    }
+    std::pair<Point, SmallVector<MPInt>> samplePoint = getSamplePoint(cone);
+    Point lambda = samplePoint.first;
+    SmallVector<MPInt> z = samplePoint.second;
+
+    SmallVector<std::pair<int, ConeV>, 2> decomposed, finalDecomposed;
+    ConeV rays = cone;
+    for (unsigned i = 0; i < lambda.size(); i++)
+    {
+        if (lambda[i] == 0)
+            continue;
+        
+        rays = cone;
+        rays.setRow(i, z);
+        decomposed = unimodularDecompositionSimplicial(lambda[i] > 0 ? sign : - sign, rays);
+        finalDecomposed.append(decomposed);
+    }
+    return finalDecomposed;
 }
 
 // Decomposes a (not necessarily either unimodular or simplicial) cone

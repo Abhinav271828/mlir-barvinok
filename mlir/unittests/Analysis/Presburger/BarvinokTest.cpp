@@ -1,4 +1,5 @@
 #include "mlir/Analysis/Presburger/Barvinok.h"
+#include "mlir/Analysis/Presburger/LinearTransform.h"
 #include "./Utils.h"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -18,3 +19,34 @@ TEST(BarvinokTest, samplePoint) {
     EXPECT_EQ(p.second, coeffs);
 
  }
+
+TEST(BarvinokTest, unimodularDecompositionSimplicial) {
+    ConeV cone = makeMatrix<MPInt>(2, 2, {{MPInt(1), MPInt(0)}, {MPInt(1), MPInt(10)}});
+    SmallVector<std::pair<int, ConeV>, 1> r = unimodularDecompositionSimplicial(1, cone);
+
+    EXPECT_EQ(r.size(), 2u);
+
+    ConeV mat = makeMatrix<MPInt>(2, 2, {{MPInt(0), MPInt(1)}, {MPInt(1), MPInt(10)}});
+    EXPECT_EQ(r[0].first, -1);
+    for (unsigned i = 0; i < 2; i++)
+        for (unsigned j = 0; j < 2; j++)
+            EXPECT_EQ(r[0].second(i, j), mat(i, j));
+
+    mat = makeMatrix<MPInt>(2, 2, {{MPInt(1), MPInt(0)}, {MPInt(0), MPInt(1)}});
+    
+    EXPECT_EQ(r[1].first, 1);
+    for (unsigned i = 0; i < 2; i++)
+        for (unsigned j = 0; j < 2; j++)
+            EXPECT_EQ(r[1].second(i, j), mat(i, j));
+
+    cone = makeMatrix<MPInt>(2, 2, {{MPInt(2), MPInt(0)}, {MPInt(0), MPInt(2)}});
+    r = unimodularDecompositionSimplicial(1, cone);
+
+    EXPECT_EQ(r.size(), 1u);
+
+    mat = makeMatrix<MPInt>(2, 2, {{MPInt(1), MPInt(0)}, {MPInt(0), MPInt(1)}});
+    EXPECT_EQ(r[0].first, 1);
+    for (unsigned i = 0; i < 2; i++)
+        for (unsigned j = 0; j < 2; j++)
+            EXPECT_EQ(r[0].second(i, j), mat(i, j));
+}
