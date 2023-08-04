@@ -213,6 +213,9 @@ public:
   /// invariants satisfied.
   bool hasConsistentState() const;
 
+  // Return the determinant of the matrix.
+  T determinant();
+
   T dotProduct(ArrayRef<T> a, ArrayRef<T> b)
   {
     T sum = T(0);
