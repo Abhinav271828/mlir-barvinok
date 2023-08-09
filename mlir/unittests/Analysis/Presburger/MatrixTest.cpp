@@ -302,3 +302,26 @@ TEST(MatrixTest, LLL) {
         EXPECT_EQ(mat(row, col), LLL(row, col));
 
 }
+
+TEST(MatrixTest, nullSpace) {
+    Matrix<MPInt> mat = makeMatrix<MPInt>(3, 5, {{MPInt(-3), MPInt(6), MPInt(-1), MPInt(1), MPInt(-7)},
+                                                 {MPInt(1), MPInt(-2), MPInt(2), MPInt(3), MPInt(-1)},
+                                                 {MPInt(2), MPInt(-4), MPInt(5), MPInt(8), MPInt(-4)}});
+    
+    unsigned r = mat.getNumRows();
+    unsigned c = mat.getNumColumns();
+    Matrix<MPInt> augmentedMatrix(r+c, c);
+    for (unsigned i = 0; i < r; i++)
+        augmentedMatrix.setRow(i, mat.getRow(i));
+    for (unsigned i = 0; i < c; i++)
+        augmentedMatrix(r+i, i) = MPInt(1);
+    Matrix<MPInt> reducedCEF = augmentedMatrix.computeHermiteNormalForm().first;
+
+    Matrix<MPInt> null = mat.nullSpace();
+
+    EXPECT_EQ(null.getNumRows(), 3u);
+
+    for (unsigned i = 0; i < 3u; i++)
+        for (unsigned j = 0; j < 3u; j++)
+            EXPECT_EQ(mat.dotProduct(mat.getRow(i), null.getRow(j)), MPInt(0));
+}

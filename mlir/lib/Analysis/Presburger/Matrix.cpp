@@ -506,6 +506,48 @@ template<> void Matrix<Fraction>::LLL(Fraction delta)
     return;
 }
 
+template<> Matrix<MPInt> Matrix<MPInt>::nullSpace()
+{
+    unsigned r = getNumRows();
+    unsigned c = getNumColumns();
+
+    Matrix<MPInt> augmentedMatrix(r+c, c);
+    for (unsigned i = 0; i < r; i++)
+        augmentedMatrix.setRow(i, getRow(i));
+    for (unsigned i = 0; i < c; i++)
+        augmentedMatrix(r+i, i) = MPInt(1);
+
+    Matrix<MPInt> reducedCEF = augmentedMatrix.computeHermiteNormalForm().first;
+    
+    int nullity = 0;
+    int flag = 0;
+    SmallVector<unsigned, 16> nullColumns = {};
+    for (unsigned i = 0; i < c; i++)      // For each column
+    {
+        flag = 0;
+        for (unsigned j = 0; j < r; j++)  // if all elements are zero
+            if (reducedCEF(j, i) != 0)
+            {
+                flag = 1;
+                break;
+            }
+        if (flag == 0)
+        {
+            nullColumns.append(1, i);
+            nullity++;
+        }
+    }
+
+    Matrix<MPInt> nullSpace(nullity, c);
+    unsigned i = 0;
+    for (unsigned k : nullColumns)
+        for (unsigned j = r; j < r+c; j++)
+            nullSpace(i, j-r) = reducedCEF(j, k);
+        i++;
+    
+    return nullSpace;
+}
+
 namespace mlir
 {
   namespace presburger

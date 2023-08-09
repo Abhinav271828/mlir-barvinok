@@ -188,6 +188,10 @@ public:
   // The parameter is delta.
   void LLL(T delta);
 
+  // Return the null space of the rowspace of the matrix.
+  // The row of the output correspond to the basis of the nullspace.
+  Matrix<T> nullSpace();
+
   /// Resize the matrix to the specified dimensions. If a dimension is smaller,
   /// the values are truncated; if it is bigger, the new values are initialized
   /// to zero.
