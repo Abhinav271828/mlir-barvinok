@@ -217,7 +217,7 @@ SmallVector<std::pair<int, ConeH>, 16> mlir::presburger::unimodularDecomposition
     
 }
 
-SmallVector<ConeV, 16> triangulate(ConeV cone)
+SmallVector<ConeV, 16> mlir::presburger::triangulate(ConeV cone)
 {
     if (cone.getNumRows() == cone.getNumColumns())
     {
@@ -241,7 +241,7 @@ SmallVector<ConeV, 16> triangulate(ConeV cone)
 
     d = d + 1;
 
-    SmallVector<ConeV, 4> decomposition = {};
+    SmallVector<ConeV, 4> decomposition = SmallVector<ConeV, 4>(0, Matrix<MPInt>(d-1, d-1));
     Matrix<MPInt> subset = Matrix<MPInt>(d-1, d);
     // We need to iterate over all subsets of n with
     // d-1 elements.
@@ -252,9 +252,10 @@ SmallVector<ConeV, 16> triangulate(ConeV cone)
         if (indicator.count() != d-1)
             continue;
 
-        for (unsigned i = 0, j = 0; i < d-1; i++)
+        unsigned j = 0;
+        for (unsigned i = 0; i < n; i++)
             if (indicator.test(i))
-                subset.setRow(j++, cone.getRow(i));
+                subset.setRow(j++, higherDimCone.getRow(i));
         
         // Now subset is a d-subset of generators (dxd matrix).
         // We need to check if its null space is 1-dimensional,
@@ -274,18 +275,18 @@ SmallVector<ConeV, 16> triangulate(ConeV cone)
 
         SmallVector<MPInt, 4> result = higherDimCone.postMultiplyWithColumn(normalToFace);
 
-        int allNonneg = 1, allNeg = 1;
+        int allNonneg = 1, allNonpos = 1;
         for (MPInt i : result)
             if (i < 0)
                 allNonneg = 0;
             else if (i > 0)
-                allNeg = 0;
+                allNonpos = 0;
 
         if ((allNonneg == 1 && normalToFace[d-1] >= 0) ||
             // The normal is the inner normal
             // Hence -normal is the outer normal, and we need to check if its last
             // coeff is negative. So we check if normal's last coeff is nonnegative.
-            (allNeg == 1 && normalToFace[d-1] < 0))
+            (allNonpos == 1 && normalToFace[d-1] < 0))
             // The normal is the outer normal, and we need to check if its last
             // coeff is negative.
         {
@@ -294,7 +295,7 @@ SmallVector<ConeV, 16> triangulate(ConeV cone)
                 for (unsigned j = 0; j < d-1; j++)
                     simplicial(i, j) = subset(i, j);
             
-            decomposition.append(1, simplicial);
+            decomposition.push_back(simplicial);
         }
         // If neither condition is satisfied, the intersection
         // is not a face.

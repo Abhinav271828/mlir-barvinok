@@ -58,15 +58,16 @@ TEST(BarvinokTest, triangulate) {
                                           {MPInt(0), MPInt(0), MPInt(3)}});
     
     SmallVector<ConeV, 2> decomp = triangulate(cone);
+    EXPECT_EQ(decomp.size(), 2u);
 
     for (unsigned i = 0; i < 3u; i++)
         for (unsigned j = 0; j < 3u; j++)
-            EXPECT_EQ(decomp[0](i, j), makeMatrix<MPInt>(3, 3, {{MPInt(4), MPInt(5), MPInt(0)},
-                                                                {MPInt(0), MPInt(3), MPInt(5)},
+            EXPECT_EQ(decomp[0](i, j), makeMatrix<MPInt>(3, 3, {{MPInt(3), MPInt(0), MPInt(4)},
+                                                                {MPInt(4), MPInt(5), MPInt(0)},
                                                                 {MPInt(0), MPInt(0), MPInt(3)}})(i, j));
     for (unsigned i = 0; i < 3u; i++)
         for (unsigned j = 0; j < 3u; j++)
-            EXPECT_EQ(decomp[1](i, j), makeMatrix<MPInt>(3, 3, {{MPInt(3), MPInt(0), MPInt(4)},
-                                                                {MPInt(4), MPInt(5), MPInt(0)},
+            EXPECT_EQ(decomp[1](i, j), makeMatrix<MPInt>(3, 3, {{MPInt(4), MPInt(5), MPInt(0)},
+                                                                {MPInt(0), MPInt(3), MPInt(5)},
                                                                 {MPInt(0), MPInt(0), MPInt(3)}})(i, j));
 }
