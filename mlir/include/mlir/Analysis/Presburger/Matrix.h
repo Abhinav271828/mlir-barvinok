@@ -189,7 +189,7 @@ public:
   void LLL(T delta);
 
   // Return the null space of the rowspace of the matrix.
-  // The row of the output correspond to the basis of the nullspace.
+  // The rows of the output correspond to the basis of the nullspace.
   Matrix<T> nullSpace();
 
   /// Resize the matrix to the specified dimensions. If a dimension is smaller,

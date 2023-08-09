@@ -50,3 +50,23 @@ TEST(BarvinokTest, unimodularDecompositionSimplicial) {
         for (unsigned j = 0; j < 2; j++)
             EXPECT_EQ(r[0].second(i, j), mat(i, j));
 }
+
+TEST(BarvinokTest, triangulate) {
+    ConeV cone = makeMatrix<MPInt>(4, 3, {{MPInt(3), MPInt(0), MPInt(4)},
+                                          {MPInt(4), MPInt(5), MPInt(0)},
+                                          {MPInt(0), MPInt(3), MPInt(5)},
+                                          {MPInt(0), MPInt(0), MPInt(3)}});
+    
+    SmallVector<ConeV, 2> decomp = triangulate(cone);
+
+    for (unsigned i = 0; i < 3u; i++)
+        for (unsigned j = 0; j < 3u; j++)
+            EXPECT_EQ(decomp[0](i, j), makeMatrix<MPInt>(3, 3, {{MPInt(4), MPInt(5), MPInt(0)},
+                                                                {MPInt(0), MPInt(3), MPInt(5)},
+                                                                {MPInt(0), MPInt(0), MPInt(3)}})(i, j));
+    for (unsigned i = 0; i < 3u; i++)
+        for (unsigned j = 0; j < 3u; j++)
+            EXPECT_EQ(decomp[1](i, j), makeMatrix<MPInt>(3, 3, {{MPInt(3), MPInt(0), MPInt(4)},
+                                                                {MPInt(4), MPInt(5), MPInt(0)},
+                                                                {MPInt(0), MPInt(0), MPInt(3)}})(i, j));
+}
