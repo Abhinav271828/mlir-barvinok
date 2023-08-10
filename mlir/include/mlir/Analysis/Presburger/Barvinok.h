@@ -67,6 +67,9 @@ SmallVector<std::pair<int, ConeH>, 16> unimodularDecomposition(ConeH);
 // Decompose a simplicial cone into unimodular cones.
 SmallVector<std::pair<int, ConeV>, 16> unimodularDecompositionSimplicial(int, ConeV);
 
+// Convert a cone in V-representation to a list of the inner normals of its faces.
+Matrix<MPInt> generatorsToNormals(ConeV);
+
 // Triangulate a non-simplicial cone into a simplicial cones.
 SmallVector<ConeV, 16> triangulate(ConeV);
 

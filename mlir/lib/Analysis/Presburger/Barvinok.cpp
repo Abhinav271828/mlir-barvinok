@@ -217,6 +217,76 @@ SmallVector<std::pair<int, ConeH>, 16> mlir::presburger::unimodularDecomposition
     
 }
 
+// Convert a cone in V-representation to H-representation, by iterating
+// over (d-1)-subsets of the rays, finding the nullspace of their span
+// and including it if it is spanned by one vector.
+// The order in which the normals are returned is that formed by iterating
+// a bitset starting at 0 and ending with 2^n-1.
+// All the normals returned are inner normals.
+Matrix<MPInt> mlir::presburger::generatorsToNormals(ConeV cone)
+{
+    unsigned n = cone.getNumRows();
+    unsigned d = cone.getNumColumns();
+
+    Matrix<MPInt> subset = Matrix<MPInt>(d-1, d);
+    Matrix<MPInt> normals = Matrix<MPInt>(0, d);
+    SmallVector<MPInt, 4> result;
+    int allNonneg, allNonpos;
+
+    // We need to iterate over all subsets of n with
+    // d-1 elements.
+    for (std::bitset<16> indicator(0);
+        indicator.to_ulong() <= ((1ul << (d-1))-1ul) << (n-d+1);              // (d-1) 1's followed by n-d+1 0's
+        indicator = std::bitset<16>(indicator.to_ulong() + 1))
+    {
+        if (indicator.count() != d-1)
+            continue;
+
+        unsigned j = 0;
+        for (unsigned i = 0; i < n; i++)
+            if (indicator.test(i))
+                subset.setRow(j++, cone.getRow(i));
+        
+        // Now subset is a (d-1)-subset of generators (d-1xd matrix).
+        // We need to check if its null space is 1-dimensional,
+        // and find the normal v.
+        // If this normal belongs to the cone, it is the inner normal;
+        // otherwise it's the outer normal.
+        // To check if v belongs to the cone, we compute Av, and
+        // if it is nonnegative, it belongs to it.
+
+        Matrix<MPInt> nullspace = subset.nullSpace();
+
+        if (nullspace.getNumRows() != 1u)
+            continue;
+        ArrayRef<MPInt> normalToFace = nullspace.getRow(0);
+
+        result = cone.postMultiplyWithColumn(normalToFace);
+
+        allNonneg = 1; allNonpos = 1;
+        for (MPInt i : result)
+            if (i < 0)
+                allNonneg = 0;
+            else if (i > 0)
+                allNonpos = 0;
+
+        if (allNonneg == 1)
+            normals.appendExtraRow(normalToFace);
+        else if (allNonpos == 1)
+        {
+            SmallVector<MPInt> innerNormal(normalToFace.begin(), normalToFace.end());
+            for (unsigned i = 0; i < normalToFace.size(); i++)
+                innerNormal[i] = -normalToFace[i];
+            normals.appendExtraRow(innerNormal);
+        }
+    }
+
+    return normals;
+}
+
+// Decompose a non-simplicial cone into a list of simplicial cones.
+// Uses Delaunay's method of projecting up the rays and projecting
+// down the lower-facing facets.
 SmallVector<ConeV, 16> mlir::presburger::triangulate(ConeV cone)
 {
     if (cone.getNumRows() == cone.getNumColumns())
@@ -242,9 +312,10 @@ SmallVector<ConeV, 16> mlir::presburger::triangulate(ConeV cone)
     d = d + 1;
 
     SmallVector<ConeV, 4> decomposition = SmallVector<ConeV, 4>(0, Matrix<MPInt>(d-1, d-1));
+    Matrix<MPInt> normals = generatorsToNormals(higherDimCone);
     Matrix<MPInt> subset = Matrix<MPInt>(d-1, d);
-    // We need to iterate over all subsets of n with
-    // d-1 elements.
+
+    unsigned i = 0;
     for (std::bitset<16> indicator(0);
         indicator.to_ulong() <= ((1ul << (d-1))-1ul) << (n-d+1);              // (d-1) 1's followed by n-d+1 0's
         indicator = std::bitset<16>(indicator.to_ulong() + 1))
@@ -252,54 +323,20 @@ SmallVector<ConeV, 16> mlir::presburger::triangulate(ConeV cone)
         if (indicator.count() != d-1)
             continue;
 
-        unsigned j = 0;
-        for (unsigned i = 0; i < n; i++)
-            if (indicator.test(i))
-                subset.setRow(j++, higherDimCone.getRow(i));
-        
-        // Now subset is a d-subset of generators (dxd matrix).
-        // We need to check if its null space is 1-dimensional,
-        // and find the normal v.
-        // If this normal belongs to the cone, it is the inner normal;
-        // otherwise it's the outer normal.
-        // To check if v belongs to the cone, we compute Av, and
-        // if it is nonnegative, it belongs to it.
-
-        Matrix<MPInt> nullspace = subset.nullSpace();
-
-        if (nullspace.getNumRows() != 1u)
-            continue;
-        ArrayRef<MPInt> normalToFace = nullspace.getRow(0);
-        // This is a d-vector.
-        // We need to multiply A x normal to check if it is inside the cone or not.
-
-        SmallVector<MPInt, 4> result = higherDimCone.postMultiplyWithColumn(normalToFace);
-
-        int allNonneg = 1, allNonpos = 1;
-        for (MPInt i : result)
-            if (i < 0)
-                allNonneg = 0;
-            else if (i > 0)
-                allNonpos = 0;
-
-        if ((allNonneg == 1 && normalToFace[d-1] >= 0) ||
-            // The normal is the inner normal
-            // Hence -normal is the outer normal, and we need to check if its last
-            // coeff is negative. So we check if normal's last coeff is nonnegative.
-            (allNonpos == 1 && normalToFace[d-1] < 0))
-            // The normal is the outer normal, and we need to check if its last
-            // coeff is negative.
+        if (normals(i++, d-1) >= 0)
         {
+            unsigned j = 0;
+            for (unsigned k = 0; k < n; k++)
+            if (indicator.test(k))
+                subset.setRow(j++, higherDimCone.getRow(k));
+
             Matrix<MPInt> simplicial(d-1, d-1);
-            for (unsigned i = 0; i < d-1; i++)
+            for (unsigned k = 0; k < d-1; k++)
                 for (unsigned j = 0; j < d-1; j++)
-                    simplicial(i, j) = subset(i, j);
-            
+                    simplicial(k, j) = subset(k, j);
+ 
             decomposition.push_back(simplicial);
         }
-        // If neither condition is satisfied, the intersection
-        // is not a face.
-
     }
 
     return decomposition;
