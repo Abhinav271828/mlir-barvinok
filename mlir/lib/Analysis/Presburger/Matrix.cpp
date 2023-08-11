@@ -231,6 +231,11 @@ template <> MPInt Matrix<MPInt>::normalizeRow(unsigned row) {
   return normalizeRow(row, getNumColumns());
 }
 
+template <> void Matrix<MPInt>::normalizeByRows() {
+  for (unsigned r = 0; r < getNumRows(); r++)
+    normalizeRow(r);
+}
+
 template <typename T> SmallVector<T, 8> Matrix<T>::preMultiplyWithRow(ArrayRef<T> rowVec) const {
   assert(rowVec.size() == getNumRows() && "Invalid row vector dimension!");
 

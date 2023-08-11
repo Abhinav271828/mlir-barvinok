@@ -156,6 +156,8 @@ public:
   /// Divide the columns of the specified row by their GCD.
   /// Returns the GCD of the columns of the specified row.
   T normalizeRow(unsigned row);
+  /// Normalize all the rows of the matrix.
+  void normalizeByRows();
 
   /// The given vector is interpreted as a row vector v. Post-multiply v with
   /// this matrix, say M, and return vM.
