@@ -249,7 +249,7 @@ TEST(MatrixTest, computeHermiteNormalForm) {
   }
 }
 
-TEST (MatrixTest, inverse) {
+TEST(MatrixTest, inverse) {
     Matrix<Fraction> mat = makeMatrix<Fraction>(2, 2, {{Fraction(2, 1), Fraction(1, 1)}, {Fraction(7, 1), Fraction(0, 1)}});
     Matrix<Fraction> inverse = makeMatrix<Fraction>(2, 2, {{Fraction(0, 1), Fraction(1, 7)}, {Fraction(1, 1), Fraction(-2, 7)}});
 
@@ -258,6 +258,18 @@ TEST (MatrixTest, inverse) {
     for (unsigned row = 0; row < 2; row++)
       for (unsigned col = 0; col < 2; col++)
         EXPECT_EQ(inv(row, col), inverse(row, col));
+}
+
+TEST(MatrixTest, intInverse) {
+    Matrix<MPInt> mat = makeMatrix<MPInt>(2, 2, {{MPInt(2), MPInt(1)}, {MPInt(7), MPInt(0)}});
+    Matrix<MPInt> inverse = makeMatrix<MPInt>(2, 2, {{MPInt(-0), MPInt(-1)}, {MPInt(-7), MPInt(2)}});
+    
+    Matrix<MPInt> inv = mat.integerInverse();
+
+    for (unsigned i = 0; i < 2u; i++)
+      for (unsigned j = 0; j < 2u; j++)
+        EXPECT_EQ(inv(i, j), inverse(i, j));
+
 }
 
 TEST(MatrixTest, gramSchmidt) {

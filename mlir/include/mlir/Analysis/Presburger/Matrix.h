@@ -165,6 +165,9 @@ public:
   /// this matrix, say M, and return Mv.
   SmallVector<T, 8> postMultiplyWithColumn(ArrayRef<T> colVec) const;
 
+  /// Transpose and return the matrix, leaving the calling object unmodified.
+  Matrix<T> transpose();
+
   /// Given the current matrix M, returns the matrices H, U such that H is the
   /// column hermite normal form of M, i.e. H = M * U, where U is unimodular and
   /// the matrix H has the following restrictions:
@@ -179,6 +182,8 @@ public:
 
   // Invert the matrix (it must be square), leaving the calling object unmodified.
   Matrix<T> inverse();
+  // Invert an integer matrix by multiplying it with its determinant.
+  Matrix<T> integerInverse();
 
   // Run Gram-Schmidt orthogonalisation on the matrix, leaving the calling object
   // unmodified and returning the orthogonal (unnormalised) matrix.

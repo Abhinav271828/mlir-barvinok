@@ -267,6 +267,14 @@ static void modEntryColumnOperation(Matrix<MPInt> &m, unsigned row, unsigned sou
   otherMatrix.addToColumn(sourceCol, targetCol, ratio);
 }
 
+template <typename T> Matrix<T> Matrix<T>::transpose() {
+    Matrix<T> t(getNumColumns(), getNumRows());
+    for (unsigned i = 0; i < getNumRows(); i++)
+      for (unsigned j = 0; j < getNumColumns(); j++)
+        t(j, i) = at(i, j);
+    return t;
+}
+
 template <> std::pair<Matrix<MPInt>, Matrix<MPInt>> Matrix<MPInt>::computeHermiteNormalForm() const {
   // We start with u as an identity matrix and perform operations on h until h
   // is in hermite normal form. We apply the same sequence of operations on u to
@@ -398,7 +406,7 @@ template<typename T> T Matrix<T>::determinant()
             for (unsigned k = 0; k < r-1; k++)
                 cofactor(k, j) = at(k+1, (j + i + 1) % c);
 
-        determinant = determinant + sign * cofactor.determinant();
+        determinant = determinant + at(0, i) * sign * cofactor.determinant();
     }
 
     return determinant;
@@ -453,6 +461,24 @@ template<> Matrix<Fraction> Matrix<Fraction>::inverse()
             inverse(i, j) = augmented(i, j+dim);
 
     return inverse;
+}
+
+template<> Matrix<MPInt> Matrix<MPInt>::integerInverse()
+{
+    Fraction det = Fraction(determinant(), 1);
+    Matrix<Fraction> newMat(getNumRows(), getNumColumns());
+    for (unsigned i = 0; i < getNumRows(); i++)
+      for (unsigned j = 0; j < getNumColumns(); j++)
+        newMat(i, j) = Fraction(at(i, j), 1);
+
+    Matrix<Fraction> fracInverse = newMat.inverse();
+    
+    Matrix<MPInt> intInverse(getNumRows(), getNumColumns());
+    for (unsigned i = 0; i < getNumRows(); i++)
+      for (unsigned j = 0; j < getNumColumns(); j++)
+        intInverse(i, j) = (fracInverse(i, j) * det).getAsInteger();
+
+    return intInverse;
 }
 
 template<> Matrix<Fraction> Matrix<Fraction>::gramSchmidt()
