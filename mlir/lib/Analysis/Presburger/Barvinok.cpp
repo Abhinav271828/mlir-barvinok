@@ -235,9 +235,9 @@ Matrix<MPInt> mlir::presburger::generatorsToNormals(ConeV cone)
 
     // We need to iterate over all subsets of n with
     // d-1 elements.
-    for (std::bitset<16> indicator(0);
+    for (std::bitset<16> indicator(((1ul << (d-1))-1ul) << (n-d+1));
         indicator.to_ulong() <= ((1ul << (d-1))-1ul) << (n-d+1);              // (d-1) 1's followed by n-d+1 0's
-        indicator = std::bitset<16>(indicator.to_ulong() + 1))
+        indicator = std::bitset<16>(indicator.to_ulong() - 1))
     {
         if (indicator.count() != d-1)
             continue;
@@ -316,9 +316,9 @@ SmallVector<ConeV, 16> mlir::presburger::triangulate(ConeV cone)
     Matrix<MPInt> subset = Matrix<MPInt>(d-1, d);
 
     unsigned i = 0;
-    for (std::bitset<16> indicator(0);
+    for (std::bitset<16> indicator(((1ul << (d-1))-1ul) << (n-d+1));
         indicator.to_ulong() <= ((1ul << (d-1))-1ul) << (n-d+1);              // (d-1) 1's followed by n-d+1 0's
-        indicator = std::bitset<16>(indicator.to_ulong() + 1))
+        indicator = std::bitset<16>(indicator.to_ulong() - 1))
     {
         if (indicator.count() != d-1)
             continue;
