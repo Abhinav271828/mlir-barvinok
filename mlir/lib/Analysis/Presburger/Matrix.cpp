@@ -402,9 +402,14 @@ template<typename T> T Matrix<T>::determinant()
     for (unsigned i = 0; i < c; i++)
     {
         sign = -sign;
-        for (unsigned j = 0; j < c-1; j++)
+        unsigned n = 0;
+        for (unsigned j = 0; j < c; j++)
+        {
+            if (j == i) continue;
             for (unsigned k = 0; k < r-1; k++)
-                cofactor(k, j) = at(k+1, (j + i + 1) % c);
+                cofactor(k, n) = at(k+1, j);
+            n++;
+        }
 
         determinant = determinant + at(0, i) * sign * cofactor.determinant();
     }

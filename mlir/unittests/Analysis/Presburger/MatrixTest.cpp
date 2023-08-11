@@ -270,6 +270,21 @@ TEST(MatrixTest, intInverse) {
       for (unsigned j = 0; j < 2u; j++)
         EXPECT_EQ(inv(i, j), inverse(i, j));
 
+    mat = makeMatrix<MPInt>(4, 4, {{ MPInt(4), MPInt(14), MPInt(11),  MPInt(3)},
+                                   {MPInt(13),  MPInt(5), MPInt(14), MPInt(12)},
+                                   {MPInt(13),  MPInt(9),  MPInt(7), MPInt(14)},
+                                   { MPInt(2),  MPInt(3), MPInt(12),  MPInt(7)}});
+    inverse = makeMatrix<MPInt>(4, 4, {{MPInt(155), MPInt(1636), -MPInt(579), -MPInt(1713)},
+                                       {MPInt(725), -MPInt(743), MPInt(537), -MPInt(111)},
+                                       {MPInt(210), MPInt(735), -MPInt(855), MPInt(360)},
+                                       {-MPInt(715), -MPInt(1409), MPInt(1401), MPInt(1482)}});
+
+    inv = mat.integerInverse();
+
+    for (unsigned i = 0; i < 2u; i++)
+      for (unsigned j = 0; j < 2u; j++)
+        EXPECT_EQ(inv(i, j), inverse(i, j));
+
 }
 
 TEST(MatrixTest, gramSchmidt) {
