@@ -440,6 +440,14 @@ template<> Matrix<Fraction> Matrix<Fraction>::inverse()
         augmented(i, dim+i).num = 1;
         augmented(i, dim+i).den = 1;
     }
+    for (unsigned i = 0; i < dim; i++)
+    {
+        if (augmented(i, i) != Fraction(0, 1)) continue;
+        unsigned j;
+        for (j = 0; j < dim; j++)
+            if (augmented(j, i) != Fraction(0, 1)) break;
+        augmented.addToRow(i, augmented.getRow(j), Fraction(1, 1));
+    }
 
     Fraction a, b;
     for (unsigned i = 0; i < dim; i++)
