@@ -144,3 +144,14 @@ TEST(BarvinokTest, unimodDecomp) {
 
     EXPECT_EQ(decomp.size(), 14u);
 }
+
+TEST(BarvinokTest, membership) {
+    // For checking the membership mechanism.
+    ConeV cone = makeMatrix<MPInt>(2, 2, {{MPInt(1), MPInt(0)}, {MPInt(1), MPInt(10)}});
+    Matrix<MPInt> normals = generatorsToNormals(cone);
+
+    ConeH hrep = getDual(normals);
+    
+    EXPECT_EQ(hrep.containsPoint(ArrayRef({MPInt(1), MPInt(5)})), true);
+    EXPECT_EQ(hrep.containsPoint(ArrayRef({MPInt(0), MPInt(1)})), false);
+}
