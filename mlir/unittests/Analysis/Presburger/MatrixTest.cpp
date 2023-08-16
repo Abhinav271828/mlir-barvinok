@@ -328,6 +328,18 @@ TEST(MatrixTest, LLL) {
       for (unsigned col = 0; col < 2; col++)
         EXPECT_EQ(mat(row, col), LLL(row, col));
 
+    mat = makeMatrix<Fraction>(3, 3, {{Fraction(1, 1), Fraction(0, 1), Fraction(2, 1)},
+                                      {Fraction(0, 1), Fraction(1, 3), -Fraction(5, 3)},
+                                      {Fraction(0, 1), Fraction(0, 1), Fraction(1, 1)}});
+    LLL = makeMatrix<Fraction>(3, 3, {{Fraction(0, 1), Fraction(1, 3), Fraction(1, 3)},
+                                      {Fraction(0, 1), Fraction(1, 3), -Fraction(2, 3)},
+                                      {Fraction(1, 1), Fraction(0, 1), Fraction(0, 1)}});
+
+    mat.LLL(Fraction(3, 4));
+
+    for (unsigned row = 0; row < 3; row++)
+      for (unsigned col = 0; col < 3; col++)
+        EXPECT_EQ(mat(row, col), LLL(row, col));
 }
 
 TEST(MatrixTest, nullSpace) {

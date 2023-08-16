@@ -522,7 +522,7 @@ template<> void Matrix<Fraction>::LLL(Fraction delta)
         for (unsigned j = k-1; j < k; j--)
         {
             mu = dotProduct(getRow(k), bStar.getRow(j)) / dotProduct(bStar.getRow(j), bStar.getRow(j));
-            if (mu > Fraction(1, 2))
+            if (abs(mu) > Fraction(1, 2))
             {
                 nearest = floor(mu + Fraction(1, 2));
                 addToRow(k, getRow(j), -Fraction(nearest, 1));
