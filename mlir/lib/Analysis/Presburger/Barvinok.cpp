@@ -51,25 +51,11 @@ ConeV mlir::presburger::getDual(ConeH cone)
 // Essentially adds a column consisting only of zeroes to the end.
 ConeH mlir::presburger::getDual(ConeV cone)
 {
-    // We don't distinguish between domain and range variables, so
-    // we set the number of domain variables as 0 and the number of
-    // range variables as the number of actual variables.
-    // There are no symbols (non-parametric for now) and no local
-    // (existentially quantified) variables.
-    PresburgerSpace space = PresburgerSpace::getRelationSpace(0, cone.getNumColumns(), 0, 0);
-
-    // We leave an extra column for the constant term. This is
-    // checked in the assert in the source of IntegerRelation.
-    ConeH dual(cone.getNumRows(), 0, cone.getNumColumns()+1, space);
+    ConeH dual = defineHRep(cone.getNumRows(), cone.getNumColumns());
+    cone.insertColumn(cone.getNumColumns());
 
     for (unsigned i = 0; i < cone.getNumRows(); i++)
-    {
-        for (unsigned j = 0; j < cone.getNumColumns(); j++)
-        {
-            dual.atIneq(i, j) = cone.at(i, j);
-        }
-        dual.atIneq(i, cone.getNumColumns()) = 0;
-    }
+        dual.addInequality(cone.getRow(i));
 
     // Now dual is of the form [ [a1, ..., an, 0] , ... ]
     // which is the H-representation of the dual.
@@ -93,7 +79,7 @@ MPInt mlir::presburger::getIndex(ConeV cone)
 // Find the shortest point in the lattice spanned by the rows
 // of the cone, and the coefficients needed to express it in
 // that basis.
-std::pair<Point, SmallVector<MPInt, 16>> mlir::presburger::getSamplePoint(ConeV cone)
+std::pair<Point, SmallVector<MPInt, 16>> mlir::presburger::getSamplePoint(ConeV cone, Fraction delta)
 {
     unsigned r = cone.getNumRows();
     unsigned c = cone.getNumColumns();
@@ -105,7 +91,7 @@ std::pair<Point, SmallVector<MPInt, 16>> mlir::presburger::getSamplePoint(ConeV 
     // We now have a basis formed by the rows of A^{-1},
     // which we reduce.
     Matrix<Fraction> reducedBasis = rayMatrix.inverse();
-    reducedBasis.LLL(Fraction(3, 4));
+    reducedBasis.LLL(delta);
 
     // We now have to find the smallest vector in this
     // basis by ∞-norm.
@@ -165,7 +151,7 @@ SmallVector<std::pair<int, ConeV>, 16> mlir::presburger::unimodularDecomposition
     {
         return SmallVector<std::pair<int, ConeV>, 1>(1, std::make_pair(sign, cone));
     }
-    std::pair<Point, SmallVector<MPInt>> samplePoint = getSamplePoint(cone);
+    std::pair<Point, SmallVector<MPInt>> samplePoint = getSamplePoint(cone, Fraction(3, 4));
     Point lambda = samplePoint.first;
     SmallVector<MPInt> z = samplePoint.second;
 
@@ -221,7 +207,7 @@ SmallVector<std::pair<int, ConeH>, 16> mlir::presburger::unimodularDecomposition
 // over (d-1)-subsets of the rays, finding the nullspace of their span
 // and including it if it is spanned by one vector.
 // The order in which the normals are returned is that formed by iterating
-// a bitset starting at 0 and ending with 2^n-1.
+// a bitset starting at 2^n-1 and ending with 0.
 // All the normals returned are inner normals.
 Matrix<MPInt> mlir::presburger::generatorsToNormals(ConeV cone)
 {

@@ -16,6 +16,7 @@
 #include "mlir/Analysis/Presburger/Fraction.h"
 #include "mlir/Analysis/Presburger/Matrix.h"
 #include "mlir/Analysis/Presburger/PresburgerSpace.h"
+#include "mlir/Analysis/Presburger/IntegerRelation.h"
 #include "mlir/Analysis/Presburger/Utils.h"
 #include "mlir/Support/LogicalResult.h"
 #include <optional>
@@ -47,13 +48,24 @@ private:
     std::vector<std::vector<Point>> denominators;
 };
 
+inline ConeH defineHRep(int num_ineqs, int num_vars)
+{
+    // We don't distinguish between domain and range variables, so
+    // we set the number of domain variables as 0 and the number of
+    // range variables as the number of actual variables.
+    // There are no symbols (non-parametric for now) and no local
+    // (existentially quantified) variables.
+    ConeH cone(PresburgerSpace::getRelationSpace(0, num_vars, 0, 0));
+    return cone;
+}
+
 // Get the index of a cone.
 // If it has more rays than the dimension, return 0.
 MPInt getIndex(ConeV);
 
 // Get the smallest vector in the basis described by the inverse of the 
 // rays of the cone, and the coefficients needed to express it in that basis.
-std::pair<Point, SmallVector<MPInt, 16>> getSamplePoint(ConeV);
+std::pair<Point, SmallVector<MPInt, 16>> getSamplePoint(ConeV, Fraction);
 
 // Get the dual of a cone in H-representation, returning the V-representation of it.
 ConeV getDual(ConeH);
