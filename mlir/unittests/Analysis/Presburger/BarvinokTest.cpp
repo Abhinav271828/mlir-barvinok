@@ -1,6 +1,8 @@
 #include "mlir/Analysis/Presburger/Barvinok.h"
 #include "mlir/Analysis/Presburger/Matrix.h"
 #include "mlir/Analysis/Presburger/LinearTransform.h"
+#include "mlir/Analysis/Presburger/IntegerRelation.h"
+#include "mlir/Analysis/Presburger/PresburgerRelation.h"
 #include "./Utils.h"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -10,7 +12,7 @@ using namespace presburger;
 
 TEST(BarvinokTest, samplePoint) {
     ConeV cone = makeMatrix<MPInt>(2, 2, {{MPInt(2), MPInt(7)}, {MPInt(1), MPInt(0)}});
-    std::pair<Point, SmallVector<MPInt>> p = getSamplePoint(cone);
+    std::pair<Point, SmallVector<MPInt>> p = getSamplePoint(cone, Fraction(3, 4));
 
     std::vector s = {Fraction(1, 7), Fraction(-2, 7)};
     Point shortest = MutableArrayRef(s);
@@ -34,7 +36,6 @@ TEST(BarvinokTest, unimodularDecompositionSimplicial) {
             EXPECT_EQ(r[0].second(i, j), mat(i, j));
 
     mat = makeMatrix<MPInt>(2, 2, {{MPInt(1), MPInt(0)}, {MPInt(0), MPInt(1)}});
-    
     EXPECT_EQ(r[1].first, 1);
     for (unsigned i = 0; i < 2; i++)
         for (unsigned j = 0; j < 2; j++)
@@ -50,6 +51,12 @@ TEST(BarvinokTest, unimodularDecompositionSimplicial) {
     for (unsigned i = 0; i < 2; i++)
         for (unsigned j = 0; j < 2; j++)
             EXPECT_EQ(r[0].second(i, j), mat(i, j));
+
+    cone = makeMatrix<MPInt>(3, 3, {{MPInt(4), MPInt(5), MPInt(0)},
+                                    {MPInt(0), MPInt(3), MPInt(5)},
+                                    {MPInt(0), MPInt(0), MPInt(3)}});
+    r = unimodularDecompositionSimplicial(1, cone);
+    EXPECT_EQ(r.size(), 8u);
 }
 
 TEST(BarvinokTest, genToIneq) {
@@ -122,4 +129,18 @@ TEST(BarvinokTest, triangulate) {
             EXPECT_EQ(decomp[0](i, j), makeMatrix<MPInt>(3, 3, {{MPInt(4), MPInt(5), MPInt(0)},
                                                                 {MPInt(0), MPInt(3), MPInt(5)},
                                                                 {MPInt(0), MPInt(0), MPInt(3)}})(i, j));
+}
+
+TEST(BarvinokTest, unimodDecomp) {
+    ConeH cone = defineHRep(4, 3);
+    Matrix<MPInt> ineqs = makeMatrix<MPInt>(4, 4, {{MPInt(3), MPInt(0), MPInt(4), MPInt(0)},
+                                                   {MPInt(4), MPInt(5), MPInt(0), MPInt(0)},
+                                                   {MPInt(0), MPInt(3), MPInt(5), MPInt(0)},
+                                                   {MPInt(0), MPInt(0), MPInt(3), MPInt(0)}});
+    for (unsigned i = 0; i < 4; i++)
+        cone.addInequality(ineqs.getRow(i));
+ 
+    SmallVector<std::pair<int, ConeH>, 2> decomp = unimodularDecomposition(cone);
+
+    EXPECT_EQ(decomp.size(), 14u);
 }
