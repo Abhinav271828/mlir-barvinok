@@ -164,6 +164,7 @@ SmallVector<std::pair<int, ConeV>, 16> mlir::presburger::unimodularDecomposition
         
         rays = cone;
         rays.setRow(i, z);
+        assert(abs(getIndex(rays)) < abs(getIndex(cone)));
         decomposed = unimodularDecompositionSimplicial(lambda[i] > 0 ? sign : - sign, rays);
         finalDecomposed.append(decomposed);
     }
