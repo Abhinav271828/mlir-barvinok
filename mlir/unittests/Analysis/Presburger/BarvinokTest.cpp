@@ -132,26 +132,48 @@ TEST(BarvinokTest, triangulate) {
 }
 
 TEST(BarvinokTest, unimodDecomp) {
-    ConeH cone = defineHRep(4, 3);
-    Matrix<MPInt> ineqs = makeMatrix<MPInt>(4, 4, {{MPInt(3), MPInt(0), MPInt(4), MPInt(0)},
-                                                   {MPInt(4), MPInt(5), MPInt(0), MPInt(0)},
-                                                   {MPInt(0), MPInt(3), MPInt(5), MPInt(0)},
-                                                   {MPInt(0), MPInt(0), MPInt(3), MPInt(0)}});
-    for (unsigned i = 0; i < 4; i++)
+    ConeH cone = defineHRep(2, 2);
+    Matrix<MPInt> ineqs = makeMatrix<MPInt>(2, 3, {{MPInt(0),  MPInt(1), MPInt(0)},
+                                                   {MPInt(3), -MPInt(1), MPInt(0)}});
+    for (unsigned i = 0; i < 2; i++)
         cone.addInequality(ineqs.getRow(i));
- 
+
+    // /_ = /  + |_ + |
+    //     |          |
     SmallVector<std::pair<int, ConeH>, 2> decomp = unimodularDecomposition(cone);
+    EXPECT_EQ(decomp.size(), 2u);
 
-    EXPECT_EQ(decomp.size(), 14u);
-}
+    EXPECT_EQ(decomp[0].first, 1);
+    for (unsigned i = 0; i < 2u; i++)
+        for (unsigned j = 0; j < 2u; j++)
+            EXPECT_EQ(decomp[0].second.atIneq(i, j), makeMatrix<MPInt>(2, 2, {{MPInt(1), MPInt(0)}, {MPInt(3), MPInt(-1)}})(i, j));
 
-TEST(BarvinokTest, membership) {
-    // For checking the membership mechanism.
-    ConeV cone = makeMatrix<MPInt>(2, 2, {{MPInt(1), MPInt(0)}, {MPInt(1), MPInt(10)}});
-    Matrix<MPInt> normals = generatorsToNormals(cone);
+    EXPECT_EQ(decomp[1].first, 1);
+    for (unsigned i = 0; i < 2u; i++)
+        for (unsigned j = 0; j < 2u; j++)
+            EXPECT_EQ(decomp[1].second.atIneq(i, j), makeMatrix<MPInt>(2, 2, {{MPInt(0), MPInt(1)}, {MPInt(1), MPInt(0)}})(i, j));
 
-    ConeH hrep = getDual(normals);
-    
-    EXPECT_EQ(hrep.containsPoint(ArrayRef({MPInt(1), MPInt(5)})), true);
-    EXPECT_EQ(hrep.containsPoint(ArrayRef({MPInt(0), MPInt(1)})), false);
+    // This decomposition is modulo cones with lines. In fact
+    // case, we need to subtract the cone defined by (x >= 0).
+    ConeH coneWithLine = defineHRep(1, 2);
+    coneWithLine.addInequality(ArrayRef({MPInt(1), MPInt(0), MPInt(0)}));
+    decomp.append(1, std::make_pair(-1, coneWithLine));
+
+    int flag = 1;
+    ArrayRef<int64_t> point;
+    for (int64_t x = -5; x < 5; x++)
+        for (int64_t y = -5; y < 5; y++)
+        {
+            // Count 1 if the point belongs to a cone,
+            // and 0 if it does not. Multiply this by
+            // the sign of the cone.
+            flag = 0;
+            for (std::pair<int, ConeH> component : decomp)
+                if (component.second.containsPoint(ArrayRef({MPInt(x), MPInt(y)})))
+                    flag += component.first;
+
+            // The result should indicate if the point
+            // belongs to the original cone.
+            EXPECT_EQ(cone.containsPoint(ArrayRef({MPInt(x), MPInt(y)})), (bool)flag);
+        }
 }
