@@ -141,17 +141,6 @@ TEST(BarvinokTest, unimodDecomp) {
     // /_ = /  + |_ + |
     //     |          |
     SmallVector<std::pair<int, ConeH>, 2> decomp = unimodularDecomposition(cone);
-    EXPECT_EQ(decomp.size(), 2u);
-
-    EXPECT_EQ(decomp[0].first, 1);
-    for (unsigned i = 0; i < 2u; i++)
-        for (unsigned j = 0; j < 2u; j++)
-            EXPECT_EQ(decomp[0].second.atIneq(i, j), makeMatrix<MPInt>(2, 2, {{MPInt(1), MPInt(0)}, {MPInt(3), MPInt(-1)}})(i, j));
-
-    EXPECT_EQ(decomp[1].first, 1);
-    for (unsigned i = 0; i < 2u; i++)
-        for (unsigned j = 0; j < 2u; j++)
-            EXPECT_EQ(decomp[1].second.atIneq(i, j), makeMatrix<MPInt>(2, 2, {{MPInt(0), MPInt(1)}, {MPInt(1), MPInt(0)}})(i, j));
 
     // This decomposition is modulo cones with lines. In fact
     // case, we need to subtract the cone defined by (x >= 0).
@@ -160,7 +149,6 @@ TEST(BarvinokTest, unimodDecomp) {
     decomp.append(1, std::make_pair(-1, coneWithLine));
 
     int flag = 1;
-    ArrayRef<int64_t> point;
     for (int64_t x = -5; x < 5; x++)
         for (int64_t y = -5; y < 5; y++)
         {
@@ -176,4 +164,106 @@ TEST(BarvinokTest, unimodDecomp) {
             // belongs to the original cone.
             EXPECT_EQ(cone.containsPoint(ArrayRef({MPInt(x), MPInt(y)})), (bool)flag);
         }
+
+    cone = defineHRep(3, 3);
+    // This is the cone whose V-rep is [[3, 0, 4], [4, 5, 0], [0, 5, 3]]
+    ineqs = makeMatrix<MPInt>(3, 4, {{MPInt(-20),  MPInt(16), MPInt(15), MPInt(0)},
+                                     {MPInt(20), MPInt(9), MPInt(-15), MPInt(0)},
+                                     {MPInt(15), MPInt(-12), MPInt(20), MPInt(0)}});
+    for (unsigned i = 0; i < 3; i++)
+        cone.addInequality(ineqs.getRow(i));
+
+    decomp = unimodularDecomposition(cone);
+    EXPECT_EQ(decomp.size(), 18u);
+
+    EXPECT_EQ(decomp[0].first, 1);
+    for (unsigned i = 0; i < 3; i++)
+        for (unsigned j = 0; j < 3; j++)
+            EXPECT_EQ(decomp[0].second.atIneq(i, j),
+                      makeMatrix<MPInt>(3, 3, {{MPInt(5), -MPInt(4), MPInt(7)}, {MPInt(4), -MPInt(3), MPInt(5)}, {MPInt(15), -MPInt(12), MPInt(20)}})(i, j));
+    EXPECT_EQ(decomp[1].first, 1);
+    for (unsigned i = 0; i < 3; i++)
+        for (unsigned j = 0; j < 3; j++)
+            EXPECT_EQ(decomp[1].second.atIneq(i, j),
+                      makeMatrix<MPInt>(3, 3, {{MPInt(0), MPInt(0), MPInt(1)}, {MPInt(4), -MPInt(3), MPInt(5)}, {MPInt(5), -MPInt(4), MPInt(7)}})(i, j));
+    EXPECT_EQ(decomp[2].first, 1);
+    for (unsigned i = 0; i < 3; i++)
+        for (unsigned j = 0; j < 3; j++)
+            EXPECT_EQ(decomp[2].second.atIneq(i, j),
+                      makeMatrix<MPInt>(3, 3, {{MPInt(1), -MPInt(1), MPInt(2)}, {MPInt(1), -MPInt(0), MPInt(0)}, {MPInt(4), -MPInt(3), MPInt(5)}})(i, j));
+    EXPECT_EQ(decomp[3].first, -1);
+    for (unsigned i = 0; i < 3; i++)
+        for (unsigned j = 0; j < 3; j++)
+            EXPECT_EQ(decomp[3].second.atIneq(i, j),
+                      makeMatrix<MPInt>(3, 3, {{MPInt(0), MPInt(0), MPInt(1)}, {MPInt(1), -MPInt(1), MPInt(2)}, {MPInt(4), -MPInt(3), MPInt(5)}})(i, j));
+    EXPECT_EQ(decomp[4].first, 1);
+    for (unsigned i = 0; i < 3; i++)
+        for (unsigned j = 0; j < 3; j++)
+            EXPECT_EQ(decomp[4].second.atIneq(i, j),
+                      makeMatrix<MPInt>(3, 3, {{MPInt(0), MPInt(0), MPInt(1)}, {MPInt(1), MPInt(0), MPInt(0)}, {MPInt(1), -MPInt(1), MPInt(2)}})(i, j));
+    EXPECT_EQ(decomp[5].first, 1);
+    for (unsigned i = 0; i < 3; i++)
+        for (unsigned j = 0; j < 3; j++)
+            EXPECT_EQ(decomp[5].second.atIneq(i, j),
+                      makeMatrix<MPInt>(3, 3, {{-MPInt(1), MPInt(1), MPInt(1)}, {MPInt(1), MPInt(0), MPInt(0)}, {MPInt(0), MPInt(0), MPInt(1)}})(i, j));
+    EXPECT_EQ(decomp[6].first, 1);
+    for (unsigned i = 0; i < 3; i++)
+        for (unsigned j = 0; j < 3; j++)
+            EXPECT_EQ(decomp[6].second.atIneq(i, j),
+                      makeMatrix<MPInt>(3, 3, {{-MPInt(5), MPInt(4), MPInt(4)}, {-MPInt(1), MPInt(1), MPInt(1)}, {MPInt(0), MPInt(0), MPInt(1)}})(i, j));
+    EXPECT_EQ(decomp[7].first, 1);
+    for (unsigned i = 0; i < 3; i++)
+        for (unsigned j = 0; j < 3; j++)
+            EXPECT_EQ(decomp[7].second.atIneq(i, j),
+                      makeMatrix<MPInt>(3, 3, {{-MPInt(20), MPInt(16), MPInt(15)}, {-MPInt(1), MPInt(1), MPInt(1)}, {-MPInt(5), MPInt(4), MPInt(4)}})(i, j));
+    EXPECT_EQ(decomp[8].first, 1);
+    for (unsigned i = 0; i < 3; i++)
+        for (unsigned j = 0; j < 3; j++)
+            EXPECT_EQ(decomp[8].second.atIneq(i, j),
+                      makeMatrix<MPInt>(3, 3, {{-MPInt(20), MPInt(16), MPInt(15)}, {MPInt(1), MPInt(0), MPInt(0)}, {-MPInt(1), MPInt(1), MPInt(1)}})(i, j));
+    EXPECT_EQ(decomp[9].first, 1);
+    for (unsigned i = 0; i < 3; i++)
+        for (unsigned j = 0; j < 3; j++)
+            EXPECT_EQ(decomp[9].second.atIneq(i, j),
+                      makeMatrix<MPInt>(3, 3, {{MPInt(4), MPInt(2), -MPInt(3)}, {MPInt(7), MPInt(3), -MPInt(5)}, {MPInt(1), MPInt(0), MPInt(0)}})(i, j));
+    EXPECT_EQ(decomp[10].first, 1);
+    for (unsigned i = 0; i < 3; i++)
+        for (unsigned j = 0; j < 3; j++)
+            EXPECT_EQ(decomp[10].second.atIneq(i, j),
+                      makeMatrix<MPInt>(3, 3, {{MPInt(4), MPInt(2), -MPInt(3)}, {MPInt(20), MPInt(9), -MPInt(15)}, {MPInt(7), MPInt(3), -MPInt(5)}})(i, j));
+    EXPECT_EQ(decomp[11].first, -1);
+    for (unsigned i = 0; i < 3; i++)
+        for (unsigned j = 0; j < 3; j++)
+            EXPECT_EQ(decomp[11].second.atIneq(i, j),
+                      makeMatrix<MPInt>(3, 3, {{-MPInt(1), -MPInt(1), MPInt(1)}, {MPInt(4), MPInt(2), -MPInt(3)}, {MPInt(1), MPInt(0), MPInt(0)}})(i, j));
+    EXPECT_EQ(decomp[12].first, -1);
+    for (unsigned i = 0; i < 3; i++)
+        for (unsigned j = 0; j < 3; j++)
+            EXPECT_EQ(decomp[12].second.atIneq(i, j),
+                      makeMatrix<MPInt>(3, 3, {{MPInt(0), MPInt(1), MPInt(0)}, {-MPInt(1), -MPInt(1), MPInt(1)}, {MPInt(1), MPInt(0), MPInt(0)}})(i, j));
+    EXPECT_EQ(decomp[13].first, 1);
+    for (unsigned i = 0; i < 3; i++)
+        for (unsigned j = 0; j < 3; j++)
+            EXPECT_EQ(decomp[13].second.atIneq(i, j),
+                      makeMatrix<MPInt>(3, 3, {{MPInt(0), MPInt(1), MPInt(0)}, {MPInt(4), MPInt(2), -MPInt(3)}, {-MPInt(1), -MPInt(1), MPInt(1)}})(i, j));
+    EXPECT_EQ(decomp[14].first, 1);
+    for (unsigned i = 0; i < 3; i++)
+        for (unsigned j = 0; j < 3; j++)
+            EXPECT_EQ(decomp[14].second.atIneq(i, j),
+                      makeMatrix<MPInt>(3, 3, {{-MPInt(1), MPInt(1), MPInt(1)}, {MPInt(0), MPInt(1), MPInt(0)}, {MPInt(1), MPInt(0), MPInt(0)}})(i, j));
+    EXPECT_EQ(decomp[15].first, -1);
+    for (unsigned i = 0; i < 3; i++)
+        for (unsigned j = 0; j < 3; j++)
+            EXPECT_EQ(decomp[15].second.atIneq(i, j),
+                      makeMatrix<MPInt>(3, 3, {{MPInt(4), -MPInt(3), -MPInt(3)}, {MPInt(0), MPInt(1), MPInt(0)}, {-MPInt(1), MPInt(1), MPInt(1)}})(i, j));
+    EXPECT_EQ(decomp[16].first, -1);
+    for (unsigned i = 0; i < 3; i++)
+        for (unsigned j = 0; j < 3; j++)
+            EXPECT_EQ(decomp[16].second.atIneq(i, j),
+                      makeMatrix<MPInt>(3, 3, {{MPInt(-20), MPInt(16), MPInt(15)}, {-MPInt(1), MPInt(1), MPInt(1)}, {MPInt(1), MPInt(0), MPInt(0)}})(i, j));
+    EXPECT_EQ(decomp[17].first, 1);
+    for (unsigned i = 0; i < 3; i++)
+        for (unsigned j = 0; j < 3; j++)
+            EXPECT_EQ(decomp[17].second.atIneq(i, j),
+                      makeMatrix<MPInt>(3, 3, {{MPInt(-20), MPInt(16), MPInt(15)}, {MPInt(4), -MPInt(3), -MPInt(3)}, {-MPInt(1), MPInt(1), MPInt(1)}})(i, j));
 }
