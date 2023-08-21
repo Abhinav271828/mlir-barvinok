@@ -40,9 +40,20 @@ class GeneratingFunction
 {
 public:
     GeneratingFunction(SmallVector<int, 16> s, std::vector<Point> nums, std::vector<std::vector<Point>> dens)
-        : signs(s), numerators(nums), denominators(dens) {};
+        {
+            signs = SmallVector<int>(s.size(), 1);
+            for (unsigned i = 0; i < s.size(); i++) signs[i] = s[i];
+            for (unsigned i = 0; i < nums.size(); i++) numerators.push_back(nums[i]);
+            for (unsigned i = 0; i < dens.size(); i++) denominators.push_back(dens[i]);
+        };
 
-private:
+    bool operator==(const GeneratingFunction &gf) const
+    {
+        if (signs != gf.signs || numerators != gf.numerators || denominators != gf.denominators)
+            return false;
+        return true;
+    }
+
     SmallVector<int, 16> signs;
     std::vector<Point> numerators;
     std::vector<std::vector<Point>> denominators;
@@ -86,7 +97,7 @@ Matrix<MPInt> generatorsToNormals(ConeV);
 SmallVector<ConeV, 16> triangulate(ConeV);
 
 // Compute the generating function for a unimodular cone.
-GeneratingFunction unimodularConeGeneratingFunction(ConeH);
+GeneratingFunction unimodularConeGeneratingFunction(Point, int, ConeH);
 
 // Compute the generating function for a polytope,
 // as the sum of generating functions of its tangent cones.

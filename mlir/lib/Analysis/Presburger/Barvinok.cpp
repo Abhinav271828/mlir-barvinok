@@ -328,3 +328,60 @@ SmallVector<ConeV, 16> mlir::presburger::triangulate(ConeV cone)
 
     return decomposition;
 }
+
+// Compute the generating function for a unimodular cone.
+GeneratingFunction mlir::presburger::unimodularConeGeneratingFunction(Point vertex, int sign, ConeH cone)
+{
+    Matrix<Fraction> transp(cone.getNumVars(), cone.getNumInequalities());
+    for (unsigned i = 0; i < cone.getNumInequalities(); i++)
+        for (unsigned j = 0; j < cone.getNumVars(); j++)
+            transp(j, i) = Fraction(cone.atIneq(i, j), MPInt(1));
+
+    Matrix<Fraction> generators = transp.inverse();
+
+    std::vector<Point> denominator(generators.getNumRows());
+    Point row;
+    for (unsigned i = 0; i < generators.getNumRows(); i++)
+    {
+        row = generators.getRow(i);
+        denominator[i] = MutableArrayRef(row.begin(), row.end());
+    }
+
+    Fraction element = Fraction(0, 1);
+    int flag = 1;
+    for (unsigned i = 0; i < vertex.size(); i++)
+        if (vertex[i].den != 1)
+        {
+            flag = 0;
+            break;
+        }
+    if (flag == 1)
+    {
+        GeneratingFunction gf(SmallVector<int, 1>(1, sign),
+                          std::vector({vertex}),
+                          std::vector({denominator}));
+        return gf;
+    }
+    else
+    {
+        // `cone` is assumed to be unimodular. Thus its ray matrix
+        // is the inverse of its transpose.
+        // We need to find c such that v = c @ rays = c @ (cone^{-1})^T.
+        // Thus c = v @ cone^T.
+        SmallVector<Fraction> coefficients = transp.preMultiplyWithRow(vertex);
+        for (unsigned i = 0; i < coefficients.size(); i++)
+            coefficients[i] = Fraction(ceil(coefficients[i]), MPInt(1));
+
+        // The numerator is ceil(c) @ rays.
+        SmallVector<Fraction> firstIntegerPoint = generators.preMultiplyWithRow(coefficients);
+        Point numerator;
+        numerator = MutableArrayRef(firstIntegerPoint.begin(), firstIntegerPoint.end());
+
+        GeneratingFunction gf(SmallVector<int, 1>(1, sign),
+                  std::vector({numerator}),
+                  std::vector({denominator}));
+ 
+        return gf;
+    }
+
+}
