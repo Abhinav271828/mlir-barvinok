@@ -156,7 +156,7 @@ SmallVector<std::pair<int, ConeV>, 16> mlir::presburger::unimodularDecomposition
     SmallVector<MPInt> z = samplePoint.second;
 
     SmallVector<std::pair<int, ConeV>, 2> decomposed, finalDecomposed;
-    ConeV rays = cone;
+    ConeV rays(cone.getNumRows(), cone.getNumColumns());
     for (unsigned i = 0; i < lambda.size(); i++)
     {
         if (lambda[i] == 0)
