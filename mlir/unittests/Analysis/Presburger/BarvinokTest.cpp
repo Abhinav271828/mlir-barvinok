@@ -14,8 +14,8 @@ TEST(BarvinokTest, samplePoint) {
     ConeV cone = makeMatrix<MPInt>(2, 2, {{MPInt(2), MPInt(7)}, {MPInt(1), MPInt(0)}});
     std::pair<Point, SmallVector<MPInt>> p = getSamplePoint(cone, Fraction(3, 4));
 
-    std::vector s = {Fraction(1, 7), Fraction(-2, 7)};
-    Point shortest = MutableArrayRef(s);
+    Point shortest = {Fraction(1, 7), Fraction(-2, 7)};
+    //Point shortest = MutableArrayRef(s);
     EXPECT_EQ(p.first, shortest);
 
     SmallVector<MPInt, 16> coeffs = {MPInt(0), MPInt(1)};
@@ -274,67 +274,20 @@ TEST(BarvinokTest, unimodGenFunc) {
     for (unsigned i = 0; i < 2u; i++)
         cone.addInequality(ineqs.getRow(i));
     
-    SmallVector<Fraction, 2> vPoint = {Fraction(3, 4), Fraction(5, 3)};
-    MutableArrayRef vertex = MutableArrayRef(vPoint.begin(), vPoint.end());
+    SmallVector<Fraction> vertex = {Fraction(3, 4), Fraction(5, 3)};
     GeneratingFunction gf = unimodularConeGeneratingFunction(vertex, 1, cone);
 
-    //Matrix<Fraction> transp(cone.getNumVars(), cone.getNumInequalities());
-    //for (unsigned i = 0; i < cone.getNumInequalities(); i++)
-    //    for (unsigned j = 0; j < cone.getNumVars(); j++)
-    //        transp(j, i) = Fraction(cone.atIneq(i, j), MPInt(1));
-
-    //Matrix<Fraction> generators = transp.inverse();
-
-    //std::vector<Point> denominator(generators.getNumRows());
-    //Point row;
-    //for (unsigned i = 0; i < generators.getNumRows(); i++)
-    //{
-    //    row = generators.getRow(i);
-    //    denominator[i] = MutableArrayRef(row.begin(), row.end());
-    //}
-
-    //Fraction element = Fraction(0, 1);
-    //int flag = 1;
-    //for (unsigned i = 0; i < vertex.size(); i++)
-    //    if (vertex[i].den != 1)
-    //    {
-    //        flag = 0;
-    //        break;
-    //    }
-    //if (flag == 1)
-    //{
-    //    GeneratingFunction gf(SmallVector<int, 1>(1, 1),
-    //                      std::vector(1, vertex),
-    //                      std::vector({denominator}));
-    //}
-    //else
-    //{
-    //    // `cone` is assumed to be unimodular. Thus its ray matrix
-    //    // is the inverse of its transpose.
-    //    // We need to find c such that v = c @ rays = c @ (cone^{-1})^T.
-    //    // Thus c = v @ cone^T.
-    //    SmallVector<Fraction> coefficients = transp.preMultiplyWithRow(vertex);
-    //    for (unsigned i = 0; i < coefficients.size(); i++)
-    //        coefficients[i] = Fraction(ceil(coefficients[i]), MPInt(1));
-
-    //    // The numerator is ceil(c) @ rays.
-    //    SmallVector<Fraction> firstIntegerPoint = generators.preMultiplyWithRow(coefficients);
-    //    Point numerator;
-    //    numerator = MutableArrayRef(firstIntegerPoint.begin(), firstIntegerPoint.end());
-
-    //    EXPECT_EQ(numerator, ArrayRef({Fraction(5, 1), Fraction(2, 1)}));
-
-    //    GeneratingFunction gf(SmallVector<int, 1>(1, 1),
-    //              std::vector(1, numerator),
-    //              std::vector({denominator}));
-    //              
-    //}
-
     SmallVector<Fraction, 2> nums = SmallVector<Fraction>({Fraction(5, 1), Fraction(2, 1)});
-    Matrix<Fraction> dens = makeMatrix<Fraction>(2, 2, {{Fraction(1, 1), Fraction(0, 1)},
-                                                        {Fraction(10, 1), Fraction(1, 1)}});
+    std::vector dens = std::vector({SmallVector<Fraction>({Fraction(1, 1), Fraction(0, 1)}),
+                                    SmallVector<Fraction>({Fraction(10, 1), Fraction(1, 1)})});
 
     EXPECT_EQ(gf.signs, SmallVector<int>(1, 1));
-    EXPECT_EQ(gf.numerators, std::vector({MutableArrayRef(nums.begin(), nums.end())}));
-    EXPECT_EQ(gf.denominators[0], std::vector({dens.getRow(0), dens.getRow(1)}));
+
+    EXPECT_EQ(gf.numerators.size(), 1u);
+    EXPECT_EQ(gf.numerators[0], nums);
+
+    EXPECT_EQ(gf.denominators.size(), 1u);
+    for (unsigned i = 0; i < 2; i++)
+        for (unsigned j = 0; j < 2; j++)
+            EXPECT_EQ(gf.denominators[0][i][j], dens[i][j]);
 }

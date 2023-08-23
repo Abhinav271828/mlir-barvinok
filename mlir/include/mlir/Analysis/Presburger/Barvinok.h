@@ -28,7 +28,7 @@ using PolyhedronH = IntegerRelation;
 using PolyhedronV = Matrix<MPInt>;
 using ConeH = PolyhedronH;
 using ConeV = PolyhedronV;
-using Point = MutableArrayRef<Fraction>;
+using Point = SmallVector<Fraction>;
 
 // Describe the type of generating function
 // used to enumerate the integer points in a polytope.
@@ -40,18 +40,51 @@ class GeneratingFunction
 {
 public:
     GeneratingFunction(SmallVector<int, 16> s, std::vector<Point> nums, std::vector<std::vector<Point>> dens)
-        {
-            signs = SmallVector<int>(s.size(), 1);
-            for (unsigned i = 0; i < s.size(); i++) signs[i] = s[i];
-            for (unsigned i = 0; i < nums.size(); i++) numerators.push_back(nums[i]);
-            for (unsigned i = 0; i < dens.size(); i++) denominators.push_back(dens[i]);
-        };
+        : signs(s), numerators(nums), denominators(dens) {};
 
     bool operator==(const GeneratingFunction &gf) const
     {
         if (signs != gf.signs || numerators != gf.numerators || denominators != gf.denominators)
             return false;
         return true;
+    }
+
+    llvm::raw_ostream &print(llvm::raw_ostream &os) const {
+        if (signs[0] == 1) os << "+";
+        else os << "-";
+
+        os << "*(x^[";
+        for (unsigned i = 0; i < numerators[0].size()-1; i++)
+            os << numerators[0][i] << ",";
+        os << numerators[0][numerators[0].size()-1] << "])/";
+
+        for (Point den : denominators[0])
+        {
+            os << "(x^[";
+            for (unsigned i = 0; i < den.size()-1; i++)
+                os << den[i] << ",";
+            os << den[den.size()-1] << "])";
+        }
+        
+        for (unsigned i = 1; i < signs.size(); i++)
+        {
+            if (signs[i] == 1) os << "+";
+            else os << "-";
+
+            os << "*(x^[";
+            for (unsigned j = 0; j < numerators[i].size()-1; j++)
+                os << numerators[i][j] << ",";
+            os << numerators[i][numerators[i].size()-1] << "])/";
+
+            for (Point den : denominators[i])
+            {
+                os << "(x^[";
+                for (unsigned j = 0; j < den.size(); j++)
+                    os << den[j] << ",";
+                os << den[den.size()-1] << "])";
+            }
+        }
+        return os;
     }
 
     SmallVector<int, 16> signs;

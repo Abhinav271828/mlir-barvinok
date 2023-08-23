@@ -117,7 +117,7 @@ std::pair<Point, SmallVector<MPInt, 16>> mlir::presburger::getSamplePoint(ConeV 
 
     // Now we have the smallest vector in the lattice spanned
     // by A^{-1} and the coefficients to express it in this basis.
-    Point lambda = reducedBasis.getRow(min_i);
+    Point lambda = SmallVector<Fraction>(reducedBasis.getRow(min_i));
     SmallVector<Fraction> zFrac = rayMatrix.preMultiplyWithRow(lambda);
 
     SmallVector<MPInt> z(r);
@@ -340,14 +340,15 @@ GeneratingFunction mlir::presburger::unimodularConeGeneratingFunction(Point vert
     Matrix<Fraction> generators = transp.inverse();
 
     std::vector<Point> denominator(generators.getNumRows());
-    Point row;
+    ArrayRef<Fraction> row;
     for (unsigned i = 0; i < generators.getNumRows(); i++)
     {
         row = generators.getRow(i);
-        denominator[i] = MutableArrayRef(row.begin(), row.end());
+        denominator[i] = Point(row);
     }
 
     Fraction element = Fraction(0, 1);
+    Point numerator;
     int flag = 1;
     for (unsigned i = 0; i < vertex.size(); i++)
         if (vertex[i].den != 1)
@@ -356,12 +357,7 @@ GeneratingFunction mlir::presburger::unimodularConeGeneratingFunction(Point vert
             break;
         }
     if (flag == 1)
-    {
-        GeneratingFunction gf(SmallVector<int, 1>(1, sign),
-                          std::vector({vertex}),
-                          std::vector({denominator}));
-        return gf;
-    }
+        numerator = vertex;
     else
     {
         // `cone` is assumed to be unimodular. Thus its ray matrix
@@ -373,15 +369,12 @@ GeneratingFunction mlir::presburger::unimodularConeGeneratingFunction(Point vert
             coefficients[i] = Fraction(ceil(coefficients[i]), MPInt(1));
 
         // The numerator is ceil(c) @ rays.
-        SmallVector<Fraction> firstIntegerPoint = generators.preMultiplyWithRow(coefficients);
-        Point numerator;
-        numerator = MutableArrayRef(firstIntegerPoint.begin(), firstIntegerPoint.end());
-
-        GeneratingFunction gf(SmallVector<int, 1>(1, sign),
-                  std::vector({numerator}),
-                  std::vector({denominator}));
- 
-        return gf;
+        numerator = generators.preMultiplyWithRow(coefficients);
     }
 
+    GeneratingFunction gf(SmallVector<int>(1, sign),
+              std::vector({numerator}),
+              std::vector({denominator}));
+ 
+    return gf;
 }
