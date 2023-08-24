@@ -76,6 +76,8 @@ inline MPInt ceil(const Fraction &f) { return ceilDiv(f.num, f.den); }
 
 inline Fraction reduce(const Fraction &f) {
   MPInt gcd = presburger::gcdRange({f.num, f.den});
+  if (f.num == MPInt(0))
+    return Fraction(MPInt(0), MPInt(1));
   return Fraction(f.num / gcd, f.den / gcd);
 }
 
