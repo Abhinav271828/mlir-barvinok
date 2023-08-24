@@ -378,3 +378,41 @@ GeneratingFunction mlir::presburger::unimodularConeGeneratingFunction(Point vert
  
     return gf;
 }
+
+Point getNonOrthogonalVector(std::vector<Point> vectors)
+{
+    unsigned dim = vectors[0].size();
+    SmallVector<Fraction> newPoint = {Fraction(1, 1)};
+    std::vector<Fraction> lowerDimDotProducts;
+    Fraction dotP = Fraction(0, 1);
+    Fraction maxDisallowedValue = Fraction(-1, 0), disallowedValue = Fraction(0, 1);
+    Fraction newValue;
+    for (unsigned d = 2; d <= dim; d++)
+    {
+        lowerDimDotProducts.clear();
+        for (Point vector : vectors)
+        {
+            dotP = Fraction(0, 1);
+            for (unsigned i = 0; i < d-1; i++)
+                dotP = dotP + vector[i] * newPoint[i];
+            lowerDimDotProducts.push_back(dotP);
+        }
+        for (unsigned i = 0; i < vectors.size(); i++)
+        {
+            if (vectors[i][d-1] == 0) continue;
+            disallowedValue = - lowerDimDotProducts[i] / vectors[i][d-1];
+            if (maxDisallowedValue < disallowedValue)
+                maxDisallowedValue = disallowedValue;
+        }
+        newValue = Fraction(ceil(maxDisallowedValue + Fraction(1, 1)), 1);
+        newPoint.append(1, newValue);
+    }
+    return newPoint;
+}
+
+// Substitute the generating function with the unit vector
+// to find the number of terms.
+MPInt substituteWithUnitVector(GeneratingFunction)
+{
+
+}
