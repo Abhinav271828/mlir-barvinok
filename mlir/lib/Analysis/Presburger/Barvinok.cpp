@@ -381,6 +381,20 @@ GeneratingFunction mlir::presburger::unimodularConeGeneratingFunction(Point vert
 
 Point getNonOrthogonalVector(std::vector<Point> vectors)
 {
+    // We use a recursive procedure. Let the inputs be {x1, ..., xk}, all vectors of length n.
+
+    // Suppose we have a vector vs which is not orthogonal to
+    // any of {x1[:n-1], ..., xk[:n-1]}.
+    // Then we need v s.t. <xi, vs++[v]> != 0
+    // => <xi[:n-1], v> + xi[-1]*v != 0
+    // => v != - <xi[:n-1], v> / xi[-1]
+    // We compute this value for all i, and then
+    // set v to be the max of this set + 1. Thus
+    // v is outside the set as desired, and we append it to vs.
+
+    // The base case is given in one dimension,
+    // where the vector [1] is not orthogonal to any
+    // of the input vectors (since they are all nonzero).
     unsigned dim = vectors[0].size();
     SmallVector<Fraction> newPoint = {Fraction(1, 1)};
     std::vector<Fraction> lowerDimDotProducts;
@@ -412,6 +426,12 @@ Point getNonOrthogonalVector(std::vector<Point> vectors)
 
 Fraction getCoefficientInRationalFunction(int power, std::vector<Fraction> num, std::vector<Fraction> den)
 {
+    // Let P[i] denote the coefficient of s^i in the L. polynomial P(s).
+    // (P/Q)[r] =
+    // if (r == 0) then P[0]/Q[0]
+    // else
+    //   (P[r] - {Σ_{i=1}^r (P/Q)[r-i])}/(Q[0])
+
     if (power == 0)
         return (num[0] / den[0]);
 
@@ -447,9 +467,11 @@ Fraction mlir::presburger::substituteWithUnitVector(GeneratingFunction gf)
     {
         sign = gf.signs[i]; v = gf.numerators[i]; ds = gf.denominators[i];
 
+        // Substitute x_i = (s+1)^μ_i
         num = Fraction(0, 1);
         for (unsigned j = 0; j < v.size(); j++)
             num = num + v[j] * mu[j];
+        // Now the numerator is (s+1)^num
 
         dens.clear();
         for (Point d : ds)
@@ -457,6 +479,8 @@ Fraction mlir::presburger::substituteWithUnitVector(GeneratingFunction gf)
             dens.push_back(Fraction(0, 1));
             for (unsigned k = 0; k < d.size(); k++)
                 dens.back() = dens.back() + d[k] * mu[k];
+            // This term in the denominator is
+            // (1 - (s+1)^dens.back())
         }
 
         numNegExps = 0;
@@ -468,20 +492,38 @@ Fraction mlir::presburger::substituteWithUnitVector(GeneratingFunction gf)
                 numNegExps += 1;
                 sumNegExps = sumNegExps + dens[j];
             }
+            // All exponents will be made positive (see line 480); then
+            // reduce (1 - (s+1)^x) to (-s)*(1 + (s+1)^{x-1}) because x > 0
             dens[j] = abs(dens[j])-1;
         }
 
+        // If we have (1 - (s+1)^-c) in the denominator,
+        // multiply and divide by (s+1)^c to get
+        // -(1 - (s+1)^c) in the denominator and
+        // increase the numerator by c.
         if (numNegExps % 2 == 1) sign = - sign;
         num = num - sumNegExps;
 
+        // Take all the (-s) out, from line 475
         r = dens.size();
         if (r % 2 == 1) sign = - sign;
 
+        // Now the expression is
+        // (s+1)^num /
+        // s^r * Π_r (1 + (s+1)^di)
+        
+        // Letting P(s) = (s+1)^num and Q(s) = Π_r (...),
+        // we need to find the coefficient of s^r in
+        // P(s)/Q(s).
+
+        // First, the coefficients of P(s), which are binomial coefficients.
         numeratorCoefficients.clear();
         numeratorCoefficients.push_back(1);
         for (int j = 1; j <= num; j++)
             numeratorCoefficients.push_back(numeratorCoefficients[j-1] * (num + 1 - j) / j);
         
+        // Then the coefficients of each individual term in Q(s),
+        // which are (di+1) C (k+1) for 0 ≤ k ≤ di
         eachTermDenCoefficients.clear();
         for (Fraction den : dens)
         {
@@ -493,6 +535,9 @@ Fraction mlir::presburger::substituteWithUnitVector(GeneratingFunction gf)
             eachTermDenCoefficients.push_back(singleTermDenCoefficients);
         }
 
+        // Now we find the coefficients in Q(s) itself
+        // by taking the convolution of the coefficients
+        // of all the terms.
         denominatorCoefficients.clear();
         denominatorCoefficients = eachTermDenCoefficients[0];
         for (unsigned j = 1; j < eachTermDenCoefficients.size(); j++)
