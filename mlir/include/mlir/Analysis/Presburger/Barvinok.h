@@ -138,7 +138,7 @@ GeneratingFunction polytopeGeneratingFunction(PolyhedronH);
 
 // Substitute the generating function with the unit vector
 // to find the number of terms.
-MPInt substituteWithUnitVector(GeneratingFunction);
+Fraction substituteWithUnitVector(GeneratingFunction);
 
 // Count the number of integer points in a polytope,
 // by chaining together `polytopeGeneratingFunction`

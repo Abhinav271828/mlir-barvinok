@@ -291,3 +291,19 @@ TEST(BarvinokTest, unimodGenFunc) {
         for (unsigned j = 0; j < 2; j++)
             EXPECT_EQ(gf.denominators[0][i][j], dens[i][j]);
 }
+
+TEST(BarvinokTest, substituteWithUnitVector) {
+    GeneratingFunction gf(SmallVector<int>({1, 1, 1}),
+                          std::vector({SmallVector<Fraction>({Fraction(2, 1), Fraction(0, 1)}),
+                                       SmallVector<Fraction>({Fraction(0, 1), Fraction(2, 1)}),
+                                       SmallVector<Fraction>({Fraction(0, 1), Fraction(0, 1)})}),
+                          std::vector({std::vector({SmallVector<Fraction>({-Fraction(1, 1), Fraction(0, 1)}),
+                                                    SmallVector<Fraction>({-Fraction(1, 1), Fraction(1, 1)})}),
+                                       std::vector({SmallVector<Fraction>({Fraction(0, 1), -Fraction(1, 1)}),
+                                                    SmallVector<Fraction>({Fraction(1, 1), -Fraction(1, 1)})}),
+                                       std::vector({SmallVector<Fraction>({Fraction(1, 1), Fraction(0, 1)}),
+                                                    SmallVector<Fraction>({Fraction(0, 1), Fraction(1, 1)})})}));
+
+    Fraction numPoints = substituteWithUnitVector(gf);
+    EXPECT_EQ(numPoints, Fraction(6, 1));
+}

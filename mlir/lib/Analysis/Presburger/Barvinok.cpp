@@ -410,9 +410,115 @@ Point getNonOrthogonalVector(std::vector<Point> vectors)
     return newPoint;
 }
 
+Fraction getCoefficientInRationalFunction(int power, std::vector<Fraction> num, std::vector<Fraction> den)
+{
+    if (power == 0)
+        return (num[0] / den[0]);
+
+    Fraction t;
+    if (power < num.size()) t = num[power];
+    else t = Fraction(0, 1);
+    for (int i = 1; (unsigned)i < (power+1 < den.size() ? power+1 : den.size()); i++)
+        t = t - den[i] * getCoefficientInRationalFunction(power-i, num, den);
+    return (t / den[0]);
+}
+
 // Substitute the generating function with the unit vector
 // to find the number of terms.
-MPInt substituteWithUnitVector(GeneratingFunction)
+Fraction mlir::presburger::substituteWithUnitVector(GeneratingFunction gf)
 {
+    std::vector<Point> allDenominators;
+    for (std::vector<Point> den : gf.denominators)
+        allDenominators.insert(allDenominators.end(), den.begin(), den.end());
+    Point mu = getNonOrthogonalVector(allDenominators);
+
+    Fraction term;
+    int sign; Point v; std::vector<Point> ds;
+    Fraction num; std::vector<Fraction> dens;
+    int numNegExps; Fraction sumNegExps;
+    std::vector<Fraction> numeratorCoefficients, singleTermDenCoefficients, denominatorCoefficients;
+    std::vector<std::vector<Fraction>> eachTermDenCoefficients;
+    std::vector<Fraction> convolution;
+    unsigned convlen = 0; Fraction sum;
+    unsigned r;
+
+    Fraction totalTerm = Fraction(0, 1);
+    for (unsigned i = 0; i < gf.signs.size(); i++)
+    {
+        sign = gf.signs[i]; v = gf.numerators[i]; ds = gf.denominators[i];
+
+        num = Fraction(0, 1);
+        for (unsigned j = 0; j < v.size(); j++)
+            num = num + v[j] * mu[j];
+
+        dens.clear();
+        for (Point d : ds)
+        {
+            dens.push_back(Fraction(0, 1));
+            for (unsigned k = 0; k < d.size(); k++)
+                dens.back() = dens.back() + d[k] * mu[k];
+        }
+
+        numNegExps = 0;
+        sumNegExps = Fraction(0, 1);
+        for (unsigned j = 0; j < dens.size(); j++)
+        {
+            if (dens[j] < Fraction(0, 1))
+            {
+                numNegExps += 1;
+                sumNegExps = sumNegExps + dens[j];
+            }
+            dens[j] = abs(dens[j])-1;
+        }
+
+        if (numNegExps % 2 == 1) sign = - sign;
+        num = num - sumNegExps;
+
+        r = dens.size();
+        if (r % 2 == 1) sign = - sign;
+
+        numeratorCoefficients.clear();
+        numeratorCoefficients.push_back(1);
+        for (int j = 1; j <= num; j++)
+            numeratorCoefficients.push_back(numeratorCoefficients[j-1] * (num + 1 - j) / j);
+        
+        eachTermDenCoefficients.clear();
+        for (Fraction den : dens)
+        {
+            singleTermDenCoefficients.clear();
+            singleTermDenCoefficients.push_back(den+Fraction(1, 1));
+            for (unsigned j = 1; j <= den; j++)
+                singleTermDenCoefficients.push_back(singleTermDenCoefficients[j-1] * (den + 1 - j) / (j + 1));
+
+            eachTermDenCoefficients.push_back(singleTermDenCoefficients);
+        }
+
+        denominatorCoefficients.clear();
+        denominatorCoefficients = eachTermDenCoefficients[0];
+        for (unsigned j = 1; j < eachTermDenCoefficients.size(); j++)
+        {
+            convlen = denominatorCoefficients.size() > eachTermDenCoefficients[j].size() ?
+                      denominatorCoefficients.size() : eachTermDenCoefficients[j].size();
+            for (unsigned k = denominatorCoefficients.size(); k < convlen; k++)
+                denominatorCoefficients.push_back(Fraction(0, 1));
+            for (unsigned k = eachTermDenCoefficients[j].size(); k < convlen; k++)
+                eachTermDenCoefficients[j].push_back(Fraction(0, 1));
+
+            convolution.clear();
+            for (unsigned k = 0; k < convlen; k++)
+            {
+                sum = Fraction(0, 1);
+                for (unsigned l = 0; l <= k; l++)
+                    sum = sum + denominatorCoefficients[l] * eachTermDenCoefficients[j][k-l];
+                convolution.push_back(sum);
+            }
+            denominatorCoefficients = convolution;
+        }
+
+        term = getCoefficientInRationalFunction(r, numeratorCoefficients, denominatorCoefficients);
+        totalTerm = totalTerm + Fraction(sign, 1) * term;
+    }
+
+    return totalTerm;
 
 }
