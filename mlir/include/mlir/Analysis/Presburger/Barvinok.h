@@ -49,6 +49,14 @@ public:
         return true;
     }
 
+    GeneratingFunction operator+(const GeneratingFunction &gf)
+    {
+        signs.insert(signs.end(), gf.signs.begin(), gf.signs.end());
+        numerators.insert(numerators.end(), gf.numerators.begin(), gf.numerators.end());
+        denominators.insert(denominators.end(), gf.denominators.begin(), gf.denominators.end());
+        return *this;
+    }
+
     llvm::raw_ostream &print(llvm::raw_ostream &os) const {
         if (signs[0] == 1) os << "+";
         else os << "-";
