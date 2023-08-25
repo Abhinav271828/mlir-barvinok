@@ -493,7 +493,7 @@ Fraction mlir::presburger::substituteWithUnitVector(GeneratingFunction gf)
                 sumNegExps = sumNegExps + dens[j];
             }
             // All exponents will be made positive (see line 480); then
-            // reduce (1 - (s+1)^x) to (-s)*(1 + (s+1)^{x-1}) because x > 0
+            // reduce (1 - (s+1)^x) to (-s)*(Σ_{x-1} (s+1)^j) because x > 0
             dens[j] = abs(dens[j])-1;
         }
 
@@ -510,7 +510,7 @@ Fraction mlir::presburger::substituteWithUnitVector(GeneratingFunction gf)
 
         // Now the expression is
         // (s+1)^num /
-        // s^r * Π_r (1 + (s+1)^di)
+        // s^r * Π_r (Σ_{d_i} (s+1)^j)
         
         // Letting P(s) = (s+1)^num and Q(s) = Π_r (...),
         // we need to find the coefficient of s^r in
@@ -523,7 +523,7 @@ Fraction mlir::presburger::substituteWithUnitVector(GeneratingFunction gf)
             numeratorCoefficients.push_back(numeratorCoefficients[j-1] * (num + 1 - j) / j);
         
         // Then the coefficients of each individual term in Q(s),
-        // which are (di+1) C (k+1) for 0 ≤ k ≤ di
+        // which are identically 1 for all powers from 0 to d_i, incl.
         eachTermDenCoefficients.clear();
         for (Fraction den : dens)
         {
