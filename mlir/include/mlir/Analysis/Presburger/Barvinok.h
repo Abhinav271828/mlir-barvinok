@@ -136,6 +136,10 @@ GeneratingFunction unimodularConeGeneratingFunction(Point, int, ConeH);
 // as the sum of generating functions of its tangent cones.
 GeneratingFunction polytopeGeneratingFunction(PolyhedronH);
 
+// Find the coefficient of a given power of s
+// in a rational function given by P(s)/Q(s).
+Fraction getCoefficientInRationalFunction(int, std::vector<Fraction>, std::vector<Fraction>);
+
 // Substitute the generating function with the unit vector
 // to find the number of terms.
 Fraction substituteWithUnitVector(GeneratingFunction);

@@ -424,7 +424,7 @@ Point getNonOrthogonalVector(std::vector<Point> vectors)
     return newPoint;
 }
 
-Fraction getCoefficientInRationalFunction(int power, std::vector<Fraction> num, std::vector<Fraction> den)
+Fraction mlir::presburger::getCoefficientInRationalFunction(int power, std::vector<Fraction> num, std::vector<Fraction> den)
 {
     // Let P[i] denote the coefficient of s^i in the L. polynomial P(s).
     // (P/Q)[r] =
@@ -504,7 +504,7 @@ Fraction mlir::presburger::substituteWithUnitVector(GeneratingFunction gf)
         if (numNegExps % 2 == 1) sign = - sign;
         num = num - sumNegExps;
 
-        // Take all the (-s) out, from line 475
+        // Take all the (-s) out, from line 495
         r = dens.size();
         if (r % 2 == 1) sign = - sign;
 
@@ -523,7 +523,7 @@ Fraction mlir::presburger::substituteWithUnitVector(GeneratingFunction gf)
             numeratorCoefficients.push_back(numeratorCoefficients[j-1] * (num + 1 - j) / j);
         
         // Then the coefficients of each individual term in Q(s),
-        // which are identically 1 for all powers from 0 to d_i, incl.
+        // which are (di+1) C (k+1) for 0 ≤ k ≤ di
         eachTermDenCoefficients.clear();
         for (Fraction den : dens)
         {

@@ -292,6 +292,58 @@ TEST(BarvinokTest, unimodGenFunc) {
             EXPECT_EQ(gf.denominators[0][i][j], dens[i][j]);
 }
 
+TEST(BarvinokTest, getCoefficientInRationalFunction) {
+    std::vector<Fraction> numeratorCoefficients, singleTermDenCoefficients, denominatorCoefficients, convolution;
+    int convlen; Fraction sum;
+    std::vector<std::vector<Fraction>> eachTermDenCoefficients;
+
+    Fraction num = Fraction(20, 1);
+    std::vector<Fraction> dens = {Fraction(8, 1), Fraction(6, 1), Fraction(1, 1)};
+
+    numeratorCoefficients.clear();
+    numeratorCoefficients.push_back(1);
+    for (int j = 1; j <= num; j++)
+        numeratorCoefficients.push_back(numeratorCoefficients[j-1] * (num + 1 - j) / j);
+        
+    // Then the coefficients of each individual term in Q(s),
+    // which are (di+1) C (k+1) for 0 ≤ k ≤ di
+    eachTermDenCoefficients.clear();
+    for (Fraction den : dens)
+    {
+        singleTermDenCoefficients.clear();
+        singleTermDenCoefficients.push_back(den+Fraction(1, 1));
+        for (unsigned j = 1; j <= den; j++)
+            singleTermDenCoefficients.push_back(singleTermDenCoefficients[j-1] * (den + 1 - j) / (j + 1));
+
+        eachTermDenCoefficients.push_back(singleTermDenCoefficients);
+    }
+
+    denominatorCoefficients.clear();
+    denominatorCoefficients = eachTermDenCoefficients[0];
+    for (unsigned j = 1; j < eachTermDenCoefficients.size(); j++)
+    {
+        convlen = denominatorCoefficients.size() > eachTermDenCoefficients[j].size() ?
+                  denominatorCoefficients.size() : eachTermDenCoefficients[j].size();
+        for (unsigned k = denominatorCoefficients.size(); k < convlen; k++)
+            denominatorCoefficients.push_back(Fraction(0, 1));
+        for (unsigned k = eachTermDenCoefficients[j].size(); k < convlen; k++)
+            eachTermDenCoefficients[j].push_back(Fraction(0, 1));
+
+        convolution.clear();
+        for (unsigned k = 0; k < convlen; k++)
+        {
+            sum = Fraction(0, 1);
+            for (unsigned l = 0; l <= k; l++)
+                sum = sum + denominatorCoefficients[l] * eachTermDenCoefficients[j][k-l];
+            convolution.push_back(sum);
+        }
+        denominatorCoefficients = convolution;
+    }
+
+    Fraction coeff = getCoefficientInRationalFunction(3, numeratorCoefficients, denominatorCoefficients);
+    EXPECT_EQ(coeff, Fraction(4531, 3024));
+}
+
 TEST(BarvinokTest, substituteWithUnitVector) {
     GeneratingFunction gf(SmallVector<int>({1, 1, 1}),
                           std::vector({SmallVector<Fraction>({Fraction(2, 1), Fraction(0, 1)}),
