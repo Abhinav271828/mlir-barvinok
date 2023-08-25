@@ -359,3 +359,51 @@ TEST(BarvinokTest, substituteWithUnitVector) {
     Fraction numPoints = substituteWithUnitVector(gf);
     EXPECT_EQ(numPoints, Fraction(6, 1));
 }
+
+TEST(BarvinokTest, polytopeGeneratingFunction) {
+    Matrix<MPInt> ineqs = makeMatrix<MPInt>(6, 4, {{MPInt(1), MPInt(0), MPInt(0), MPInt(0)},
+                                                   {MPInt(0), MPInt(1), MPInt(0), MPInt(0)},
+                                                   {MPInt(0), MPInt(0), MPInt(1), MPInt(0)},
+                                                   {MPInt(-1), MPInt(0), MPInt(0), MPInt(1)},
+                                                   {MPInt(0), MPInt(-1), MPInt(0), MPInt(1)},
+                                                   {MPInt(0), MPInt(0), MPInt(-1), MPInt(1)}});
+    PolyhedronH cube = defineHRep(6, 3);
+    for (unsigned i = 0; i < 6; i++)
+        cube.addInequality(ineqs.getRow(i));
+    
+    GeneratingFunction gf = polytopeGeneratingFunction(cube);
+
+    EXPECT_EQ(gf.signs, SmallVector<int>({1, 1, 1, 1, 1, 1, 1, 1}));
+    EXPECT_EQ(gf.numerators, std::vector<Point>({SmallVector<Fraction>({1, 1, 1}),
+                                                 SmallVector<Fraction>({0, 1, 1}),
+                                                 SmallVector<Fraction>({1, 0, 1}),
+                                                 SmallVector<Fraction>({0, 0, 1}),
+                                                 SmallVector<Fraction>({1, 1, 0}),
+                                                 SmallVector<Fraction>({0, 1, 0}),
+                                                 SmallVector<Fraction>({1, 0, 0}),
+                                                 SmallVector<Fraction>({0, 0, 0})}));
+    EXPECT_EQ(gf.denominators, std::vector<std::vector<Point>>({std::vector<Point>({SmallVector<Fraction>({-1, 0, 0}),
+                                                                                    SmallVector<Fraction>({0, -1, 0}),
+                                                                                    SmallVector<Fraction>({0, 0, -1})}),
+                                                                std::vector<Point>({SmallVector<Fraction>({1, 0, 0}),
+                                                                                    SmallVector<Fraction>({0, -1, 0}),
+                                                                                    SmallVector<Fraction>({0, 0, -1})}),
+                                                                std::vector<Point>({SmallVector<Fraction>({0, 1, 0}),
+                                                                                    SmallVector<Fraction>({-1, 0, 0}),
+                                                                                    SmallVector<Fraction>({0, 0, -1})}),
+                                                                std::vector<Point>({SmallVector<Fraction>({1, 0, 0}),
+                                                                                    SmallVector<Fraction>({0, 1, 0}),
+                                                                                    SmallVector<Fraction>({0, 0, -1})}),
+                                                                std::vector<Point>({SmallVector<Fraction>({0, 0, 1}),
+                                                                                    SmallVector<Fraction>({-1, 0, 0}),
+                                                                                    SmallVector<Fraction>({0, -1, 0})}),
+                                                                std::vector<Point>({SmallVector<Fraction>({1, 0, 0}),
+                                                                                    SmallVector<Fraction>({0, 0, 1}),
+                                                                                    SmallVector<Fraction>({0, -1, 0})}),
+                                                                std::vector<Point>({SmallVector<Fraction>({0, 1, 0}),
+                                                                                    SmallVector<Fraction>({0, 0, 1}),
+                                                                                    SmallVector<Fraction>({-1, 0, 0})}),
+                                                                std::vector<Point>({SmallVector<Fraction>({1, 0, 0}),
+                                                                                    SmallVector<Fraction>({0, 1, 0}),
+                                                                                    SmallVector<Fraction>({0, 0, 1})})}));
+}
