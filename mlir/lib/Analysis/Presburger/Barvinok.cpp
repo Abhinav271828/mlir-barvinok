@@ -379,6 +379,67 @@ GeneratingFunction mlir::presburger::unimodularConeGeneratingFunction(Point vert
     return gf;
 }
 
+GeneratingFunction mlir::presburger::polytopeGeneratingFunction(PolyhedronH poly)
+{
+    SmallVector<ConeH, 4> tgtCones;
+    unsigned d = poly.getNumVars(); unsigned n = poly.getNumInequalities();
+    Simplex potentialCone(d);
+    ConeH tgtCone = defineHRep(0, d);
+
+    std::optional<SmallVector<MPInt, 8>> vertex;
+    Point fracVertex;
+    MPInt valueAt;
+
+    SmallVector<std::pair<int, ConeH>, 4> unimodCones;
+
+    GeneratingFunction gf({}, {}, {});
+    for (std::bitset<16> indicator(((1ul << d)-1ul) << (n-d));
+        indicator.to_ulong() <= ((1ul << d)-1ul) << (n-d);              // d 1's followed by n-d 0's
+        indicator = std::bitset<16>(indicator.to_ulong() - 1))
+    {
+        if (indicator.count() != d)
+            continue;
+
+        potentialCone = Simplex(d);
+        unsigned j = 0;
+        for (unsigned i = 0; i < n; i++)
+            if (indicator.test(i))
+                potentialCone.addEquality(poly.getInequality(i));
+            else
+                potentialCone.addInequality(poly.getInequality(i));
+        
+        if (potentialCone.isUnbounded() || potentialCone.isEmpty())
+            continue;
+        
+        vertex = potentialCone.findIntegerSample();
+        if (vertex == std::nullopt) continue;
+        fracVertex.clear();
+        for (MPInt v : *vertex)
+            fracVertex.push_back((Fraction(v, 1)));
+
+        tgtCone = defineHRep(0, d);
+        for (unsigned i = 0; i < n; i++)
+        {
+            if (indicator.test(i))
+                tgtCone.addInequality(poly.getInequality(i));
+            else
+            {
+                valueAt = MPInt(0);
+                for (unsigned j = 0; j < d; j++)
+                    valueAt = valueAt + (*vertex)[j]*poly.atIneq(i, j);
+                if (valueAt == poly.atIneq(i, d))
+                    tgtCone.addInequality(poly.getInequality(i));
+            }
+        }
+        
+        unimodCones = unimodularDecomposition(tgtCone);
+        for (std::pair<int, ConeH> comp : unimodCones)
+            gf = gf + unimodularConeGeneratingFunction(fracVertex, comp.first, comp.second);
+
+    }
+    return gf;
+}
+
 Point getNonOrthogonalVector(std::vector<Point> vectors)
 {
     // We use a recursive procedure. Let the inputs be {x1, ..., xk}, all vectors of length n.
