@@ -27,15 +27,28 @@
 namespace mlir {
 namespace presburger {
 
-template<typename T> inline Matrix<T> makeMatrix(unsigned numRow, unsigned numColumns,
-                         ArrayRef<SmallVector<T, 8>> matrix) {
-  Matrix<T> results(numRow, numColumns);
+inline Matrix<MPInt> makeIntMatrix(unsigned numRow, unsigned numColumns,
+                         ArrayRef<SmallVector<int, 8>> matrix) {
+  Matrix<MPInt> results(numRow, numColumns);
   assert(matrix.size() == numRow);
   for (unsigned i = 0; i < numRow; ++i) {
     assert(matrix[i].size() == numColumns &&
            "Output expression has incorrect dimensionality!");
     for (unsigned j = 0; j < numColumns; ++j)
-      results(i, j) = T(matrix[i][j]);
+      results(i, j) = MPInt(matrix[i][j]);
+  }
+  return results;
+}
+
+inline Matrix<Fraction> makeFracMatrix(unsigned numRow, unsigned numColumns,
+                         ArrayRef<SmallVector<Fraction, 8>> matrix) {
+  Matrix<Fraction> results(numRow, numColumns);
+  assert(matrix.size() == numRow);
+  for (unsigned i = 0; i < numRow; ++i) {
+    assert(matrix[i].size() == numColumns &&
+           "Output expression has incorrect dimensionality!");
+    for (unsigned j = 0; j < numColumns; ++j)
+      results(i, j) = matrix[i][j];
   }
   return results;
 }

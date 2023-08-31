@@ -209,49 +209,49 @@ TEST(MatrixTest, computeHermiteNormalForm) {
 
   {
     // Hermite form of a unimodular matrix is the identity matrix.
-    Matrix<MPInt> mat = makeMatrix<MPInt>(3, 3, {{MPInt(2), MPInt(3), MPInt(6)}, {MPInt(3), MPInt(2), MPInt(3)}, {MPInt(17), MPInt(11), MPInt(16)}});
-    Matrix<MPInt> hermiteForm = makeMatrix<MPInt>(3, 3, {{MPInt(1), MPInt(0), MPInt(0)}, {MPInt(0), MPInt(1), MPInt(0)}, {MPInt(0), MPInt(0), MPInt(1)}});
+    Matrix<MPInt> mat = makeIntMatrix(3, 3, {{2, 3, 6}, {3, 2, 3}, {17, 11, 16}});
+    Matrix<MPInt> hermiteForm = makeIntMatrix(3, 3, {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}});
     checkHermiteNormalForm(mat, hermiteForm);
   }
 
   {
     // Hermite form of a unimodular is the identity matrix.
-    Matrix<MPInt> mat = makeMatrix<MPInt>(
+    Matrix<MPInt> mat = makeIntMatrix(
         4, 4,
-        {{-MPInt(6), -MPInt(1), -MPInt(19), -MPInt(20)}, {MPInt(0), MPInt(1), MPInt(0), MPInt(0)}, {-MPInt(5), MPInt(0), -MPInt(15), -MPInt(16)}, {MPInt(6), MPInt(0), MPInt(18), MPInt(19)}});
-    Matrix<MPInt> hermiteForm = makeMatrix<MPInt>(
-        4, 4, {{MPInt(1), MPInt(0), MPInt(0), MPInt(0)}, {MPInt(0), MPInt(1), MPInt(0), MPInt(0)}, {MPInt(0), MPInt(0), MPInt(1), MPInt(0)}, {MPInt(0), MPInt(0), MPInt(0), MPInt(1)}});
+        {{-6, -1, -19, -20}, {0, 1, 0, 0}, {-5, 0, -15, -16}, {6, 0, 18, 19}});
+    Matrix<MPInt> hermiteForm = makeIntMatrix(
+        4, 4, {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}});
     checkHermiteNormalForm(mat, hermiteForm);
   }
 
   {
-    Matrix<MPInt> mat = makeMatrix<MPInt>(
-        4, 4, {{MPInt(3), MPInt(3), MPInt(1), MPInt(4)}, {MPInt(0), MPInt(1), MPInt(0), MPInt(0)}, {MPInt(0), MPInt(0), MPInt(19), MPInt(16)}, {MPInt(0), MPInt(0), MPInt(0), MPInt(3)}});
-    Matrix<MPInt> hermiteForm = makeMatrix<MPInt>(
-        4, 4, {{MPInt(1), MPInt(0), MPInt(0), MPInt(0)}, {MPInt(0), MPInt(1), MPInt(0), MPInt(0)}, {MPInt(1), MPInt(0), MPInt(3), MPInt(0)}, {MPInt(18), MPInt(0), MPInt(54), MPInt(57)}});
+    Matrix<MPInt> mat = makeIntMatrix(
+        4, 4, {{3, 3, 1, 4}, {0, 1, 0, 0}, {0, 0, 19, 16}, {0, 0, 0, 3}});
+    Matrix<MPInt> hermiteForm = makeIntMatrix(
+        4, 4, {{1, 0, 0, 0}, {0, 1, 0, 0}, {1, 0, 3, 0}, {18, 0, 54, 57}});
     checkHermiteNormalForm(mat, hermiteForm);
   }
 
   {
-    Matrix<MPInt> mat = makeMatrix<MPInt>(
-        4, 4, {{MPInt(3), MPInt(3), MPInt(1), MPInt(4)}, {MPInt(0), MPInt(1), MPInt(0), MPInt(0)}, {MPInt(0), MPInt(0), MPInt(19), MPInt(16)}, {MPInt(0), MPInt(0), MPInt(0), MPInt(3)}});
-    Matrix<MPInt> hermiteForm = makeMatrix<MPInt>(
-        4, 4, {{MPInt(1), MPInt(0), MPInt(0), MPInt(0)}, {MPInt(0), MPInt(1), MPInt(0), MPInt(0)}, {MPInt(1), MPInt(0), MPInt(3), MPInt(0)}, {MPInt(18), MPInt(0), MPInt(54), MPInt(57)}});
+    Matrix<MPInt> mat = makeIntMatrix(
+        4, 4, {{3, 3, 1, 4}, {0, 1, 0, 0}, {0, 0, 19, 16}, {0, 0, 0, 3}});
+    Matrix<MPInt> hermiteForm = makeIntMatrix(
+        4, 4, {{1, 0, 0, 0}, {0, 1, 0, 0}, {1, 0, 3, 0}, {18, 0, 54, 57}});
     checkHermiteNormalForm(mat, hermiteForm);
   }
 
   {
     Matrix<MPInt> mat =
-        makeMatrix<MPInt>(3, 5, {{MPInt(0), MPInt(2), MPInt(0), MPInt(7), MPInt(1)}, {-MPInt(1), MPInt(0), MPInt(0), -MPInt(3), MPInt(0)}, {MPInt(0), MPInt(4), MPInt(1), MPInt(0), MPInt(8)}});
+        makeIntMatrix(3, 5, {{0, 2, 0, 7, 1}, {-1, 0, 0, -3, 0}, {0, 4, 1, 0, 8}});
     Matrix<MPInt> hermiteForm =
-        makeMatrix<MPInt>(3, 5, {{MPInt(1), MPInt(0), MPInt(0), MPInt(0), MPInt(0)}, {MPInt(0), MPInt(1), MPInt(0), MPInt(0), MPInt(0)}, {MPInt(0), MPInt(0), MPInt(1), MPInt(0), MPInt(0)}});
+        makeIntMatrix(3, 5, {{1, 0, 0, 0, 0}, {0, 1, 0, 0, 0}, {0, 0, 1, 0, 0}});
     checkHermiteNormalForm(mat, hermiteForm);
   }
 }
 
 TEST(MatrixTest, inverse) {
-    Matrix<Fraction> mat = makeMatrix<Fraction>(2, 2, {{Fraction(2, 1), Fraction(1, 1)}, {Fraction(7, 1), Fraction(0, 1)}});
-    Matrix<Fraction> inverse = makeMatrix<Fraction>(2, 2, {{Fraction(0, 1), Fraction(1, 7)}, {Fraction(1, 1), Fraction(-2, 7)}});
+    Matrix<Fraction> mat = makeFracMatrix(2, 2, {{Fraction(2, 1), Fraction(1, 1)}, {Fraction(7, 1), Fraction(0, 1)}});
+    Matrix<Fraction> inverse = makeFracMatrix(2, 2, {{Fraction(0, 1), Fraction(1, 7)}, {Fraction(1, 1), Fraction(-2, 7)}});
 
     Matrix<Fraction> inv = mat.inverse();
 
@@ -261,8 +261,8 @@ TEST(MatrixTest, inverse) {
 }
 
 TEST(MatrixTest, intInverse) {
-    Matrix<MPInt> mat = makeMatrix<MPInt>(2, 2, {{MPInt(2), MPInt(1)}, {MPInt(7), MPInt(0)}});
-    Matrix<MPInt> inverse = makeMatrix<MPInt>(2, 2, {{MPInt(-0), MPInt(-1)}, {MPInt(-7), MPInt(2)}});
+    Matrix<MPInt> mat = makeIntMatrix(2, 2, {{2, 1}, {7, 0}});
+    Matrix<MPInt> inverse = makeIntMatrix(2, 2, {{0, -1}, {-7, 2}});
     
     Matrix<MPInt> inv = mat.integerInverse();
 
@@ -270,14 +270,14 @@ TEST(MatrixTest, intInverse) {
       for (unsigned j = 0; j < 2u; j++)
         EXPECT_EQ(inv(i, j), inverse(i, j));
 
-    mat = makeMatrix<MPInt>(4, 4, {{ MPInt(4), MPInt(14), MPInt(11),  MPInt(3)},
-                                   {MPInt(13),  MPInt(5), MPInt(14), MPInt(12)},
-                                   {MPInt(13),  MPInt(9),  MPInt(7), MPInt(14)},
-                                   { MPInt(2),  MPInt(3), MPInt(12),  MPInt(7)}});
-    inverse = makeMatrix<MPInt>(4, 4, {{MPInt(155), MPInt(1636), -MPInt(579), -MPInt(1713)},
-                                       {MPInt(725), -MPInt(743), MPInt(537), -MPInt(111)},
-                                       {MPInt(210), MPInt(735), -MPInt(855), MPInt(360)},
-                                       {-MPInt(715), -MPInt(1409), MPInt(1401), MPInt(1482)}});
+    mat = makeIntMatrix(4, 4, {{ 4, 14, 11,  3},
+                               {13,  5, 14, 12},
+                               {13,  9,  7, 14},
+                               { 2,  3, 12,  7}});
+    inverse = makeIntMatrix(4, 4, {{155, 1636, -579, -1713},
+                                   {725, -743, 537, -111},
+                                   {210, 735, -855, 360},
+                                   {-715, -1409, 1401, 1482}});
 
     inv = mat.integerInverse();
 
@@ -288,11 +288,11 @@ TEST(MatrixTest, intInverse) {
 }
 
 TEST(MatrixTest, gramSchmidt) {
-    Matrix<Fraction> mat = makeMatrix<Fraction>(3, 5, {{Fraction(3, 1), Fraction(4, 1), Fraction(5, 1), Fraction(12, 1), Fraction(19, 1)},
-                                     {Fraction(4, 1), Fraction(5, 1), Fraction(6, 1), Fraction(13, 1), Fraction(20, 1)},
-                                     {Fraction(7, 1), Fraction(8, 1), Fraction(9, 1), Fraction(16, 1), Fraction(24, 1)}});
+    Matrix<Fraction> mat = makeFracMatrix(3, 5, {{Fraction(3, 1), Fraction(4, 1), Fraction(5, 1), Fraction(12, 1), Fraction(19, 1)},
+                                                 {Fraction(4, 1), Fraction(5, 1), Fraction(6, 1), Fraction(13, 1), Fraction(20, 1)},
+                                                 {Fraction(7, 1), Fraction(8, 1), Fraction(9, 1), Fraction(16, 1), Fraction(24, 1)}});
 
-    Matrix<Fraction> gramSchmidt = makeMatrix<Fraction>(3, 5,
+    Matrix<Fraction> gramSchmidt = makeFracMatrix(3, 5,
            {{Fraction(3, 1),     Fraction(4, 1),     Fraction(5, 1),    Fraction(12, 1),     Fraction(19, 1)},
             {Fraction(142, 185), Fraction(383, 555), Fraction(68, 111), Fraction(13, 185),   Fraction(-262, 555)},
             {Fraction(53, 463),  Fraction(27, 463),  Fraction(1, 463),  Fraction(-181, 463), Fraction(100, 463)}});
@@ -305,22 +305,22 @@ TEST(MatrixTest, gramSchmidt) {
 }
 
 TEST(MatrixTest, LLL) {
-    Matrix<Fraction> mat = makeMatrix<Fraction>(3, 3, {{Fraction(1, 1), Fraction(1, 1), Fraction(1, 1)},
-                                     {Fraction(-1, 1), Fraction(0, 1), Fraction(2, 1)},
-                                     {Fraction(3, 1), Fraction(5, 1), Fraction(6, 1)}});
+    Matrix<Fraction> mat = makeFracMatrix(3, 3, {{Fraction(1, 1), Fraction(1, 1), Fraction(1, 1)},
+                                                 {Fraction(-1, 1), Fraction(0, 1), Fraction(2, 1)},
+                                                 {Fraction(3, 1), Fraction(5, 1), Fraction(6, 1)}});
     mat.LLL(Fraction(3, 4));
     
-    Matrix<Fraction> LLL = makeMatrix<Fraction>(3, 3, {{Fraction(0, 1), Fraction(1, 1), Fraction(0, 1)},
-                                     {Fraction(1, 1), Fraction(0, 1), Fraction(1, 1)},
-                                     {Fraction(-1, 1), Fraction(0, 1), Fraction(2, 1)}});
+    Matrix<Fraction> LLL = makeFracMatrix(3, 3, {{Fraction(0, 1), Fraction(1, 1), Fraction(0, 1)},
+                                                 {Fraction(1, 1), Fraction(0, 1), Fraction(1, 1)},
+                                                 {Fraction(-1, 1), Fraction(0, 1), Fraction(2, 1)}});
 
     for (unsigned row = 0; row < 3; row++)
       for (unsigned col = 0; col < 3; col++)
         EXPECT_EQ(mat(row, col), LLL(row, col));
 
 
-    mat = makeMatrix<Fraction>(2, 2, {{Fraction(12, 1), Fraction(2, 1)}, {Fraction(13, 1), Fraction(4, 1)}});
-    LLL = makeMatrix<Fraction>(2, 2, {{Fraction(1, 1),  Fraction(2, 1)}, {Fraction(9, 1),  Fraction(-4, 1)}});
+    mat = makeFracMatrix(2, 2, {{Fraction(12, 1), Fraction(2, 1)}, {Fraction(13, 1), Fraction(4, 1)}});
+    LLL = makeFracMatrix(2, 2, {{Fraction(1, 1),  Fraction(2, 1)}, {Fraction(9, 1),  Fraction(-4, 1)}});
 
     mat.LLL(Fraction(3, 4));
 
@@ -328,12 +328,12 @@ TEST(MatrixTest, LLL) {
       for (unsigned col = 0; col < 2; col++)
         EXPECT_EQ(mat(row, col), LLL(row, col));
 
-    mat = makeMatrix<Fraction>(3, 3, {{Fraction(1, 1), Fraction(0, 1), Fraction(2, 1)},
-                                      {Fraction(0, 1), Fraction(1, 3), -Fraction(5, 3)},
-                                      {Fraction(0, 1), Fraction(0, 1), Fraction(1, 1)}});
-    LLL = makeMatrix<Fraction>(3, 3, {{Fraction(0, 1), Fraction(1, 3), Fraction(1, 3)},
-                                      {Fraction(0, 1), Fraction(1, 3), -Fraction(2, 3)},
-                                      {Fraction(1, 1), Fraction(0, 1), Fraction(0, 1)}});
+    mat = makeFracMatrix(3, 3, {{Fraction(1, 1), Fraction(0, 1), Fraction(2, 1)},
+                                {Fraction(0, 1), Fraction(1, 3), -Fraction(5, 3)},
+                                {Fraction(0, 1), Fraction(0, 1), Fraction(1, 1)}});
+    LLL = makeFracMatrix(3, 3, {{Fraction(0, 1), Fraction(1, 3), Fraction(1, 3)},
+                                {Fraction(0, 1), Fraction(1, 3), -Fraction(2, 3)},
+                                {Fraction(1, 1), Fraction(0, 1), Fraction(0, 1)}});
 
     mat.LLL(Fraction(3, 4));
 
@@ -343,9 +343,9 @@ TEST(MatrixTest, LLL) {
 }
 
 TEST(MatrixTest, nullSpace) {
-    Matrix<MPInt> mat = makeMatrix<MPInt>(3, 5, {{MPInt(-3), MPInt(6), MPInt(-1), MPInt(1), MPInt(-7)},
-                                                 {MPInt(1), MPInt(-2), MPInt(2), MPInt(3), MPInt(-1)},
-                                                 {MPInt(2), MPInt(-4), MPInt(5), MPInt(8), MPInt(-4)}});
+    Matrix<MPInt> mat = makeIntMatrix(3, 5, {{-3, 6, -1, 1, -7},
+                                             {1, -2, 2, 3, -1},
+                                             {2, -4, 5, 8, -4}});
     
     unsigned r = mat.getNumRows();
     unsigned c = mat.getNumColumns();

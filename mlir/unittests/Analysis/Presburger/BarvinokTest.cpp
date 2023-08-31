@@ -11,7 +11,7 @@ using namespace mlir;
 using namespace presburger;
 
 TEST(BarvinokTest, samplePoint) {
-    ConeV cone = makeMatrix<MPInt>(2, 2, {{MPInt(2), MPInt(7)}, {MPInt(1), MPInt(0)}});
+    ConeV cone = makeIntMatrix(2, 2, {{2, 7}, {1, 0}});
     std::pair<Point, SmallVector<MPInt>> p = getSamplePoint(cone, Fraction(3, 4));
 
     Point shortest = {Fraction(1, 7), Fraction(-2, 7)};
@@ -24,46 +24,46 @@ TEST(BarvinokTest, samplePoint) {
  }
 
 TEST(BarvinokTest, unimodularDecompositionSimplicial) {
-    ConeV cone = makeMatrix<MPInt>(2, 2, {{MPInt(1), MPInt(0)}, {MPInt(1), MPInt(10)}});
+    ConeV cone = makeIntMatrix(2, 2, {{1, 0}, {1, 10}});
     SmallVector<std::pair<int, ConeV>, 1> r = unimodularDecompositionSimplicial(1, cone);
 
     EXPECT_EQ(r.size(), 2u);
 
-    ConeV mat = makeMatrix<MPInt>(2, 2, {{MPInt(0), MPInt(1)}, {MPInt(1), MPInt(10)}});
+    ConeV mat = makeIntMatrix(2, 2, {{0, 1}, {1, 10}});
     EXPECT_EQ(r[0].first, -1);
     for (unsigned i = 0; i < 2; i++)
         for (unsigned j = 0; j < 2; j++)
             EXPECT_EQ(r[0].second(i, j), mat(i, j));
 
-    mat = makeMatrix<MPInt>(2, 2, {{MPInt(1), MPInt(0)}, {MPInt(0), MPInt(1)}});
+    mat = makeIntMatrix(2, 2, {{1, 0}, {0, 1}});
     EXPECT_EQ(r[1].first, 1);
     for (unsigned i = 0; i < 2; i++)
         for (unsigned j = 0; j < 2; j++)
             EXPECT_EQ(r[1].second(i, j), mat(i, j));
 
-    cone = makeMatrix<MPInt>(2, 2, {{MPInt(2), MPInt(0)}, {MPInt(0), MPInt(2)}});
+    cone = makeIntMatrix(2, 2, {{2, 0}, {0, 2}});
     r = unimodularDecompositionSimplicial(1, cone);
 
     EXPECT_EQ(r.size(), 1u);
 
-    mat = makeMatrix<MPInt>(2, 2, {{MPInt(1), MPInt(0)}, {MPInt(0), MPInt(1)}});
+    mat = makeIntMatrix(2, 2, {{1, 0}, {0, 1}});
     EXPECT_EQ(r[0].first, 1);
     for (unsigned i = 0; i < 2; i++)
         for (unsigned j = 0; j < 2; j++)
             EXPECT_EQ(r[0].second(i, j), mat(i, j));
 
-    cone = makeMatrix<MPInt>(3, 3, {{MPInt(4), MPInt(5), MPInt(0)},
-                                    {MPInt(0), MPInt(3), MPInt(5)},
-                                    {MPInt(0), MPInt(0), MPInt(3)}});
+    cone = makeIntMatrix(3, 3, {{4, 5, 0},
+                                {0, 3, 5},
+                                {0, 0, 3}});
     r = unimodularDecompositionSimplicial(1, cone);
     EXPECT_EQ(r.size(), 8u);
 }
 
 TEST(BarvinokTest, genToIneq) {
-    ConeV cone = makeMatrix<MPInt>(4, 4, {{ MPInt(4), MPInt(14), MPInt(11),  MPInt(3)},
-                                    {MPInt(13),  MPInt(5), MPInt(14), MPInt(12)},
-                                    {MPInt(13),  MPInt(9),  MPInt(7), MPInt(14)},
-                                    { MPInt(2),  MPInt(3), MPInt(12),  MPInt(7)}});
+    ConeV cone = makeIntMatrix(4, 4, {{ 4, 14, 11,  3},
+                                      {13,  5, 14, 12},
+                                      {13,  9,  7, 14},
+                                      { 2,  3, 12,  7}});
     Matrix<MPInt> normals = cone.integerInverse().transpose();
     normals.normalizeByRows();
 
@@ -73,13 +73,13 @@ TEST(BarvinokTest, genToIneq) {
         for (unsigned j = 0; j < 4u; j++)
             EXPECT_EQ(coneH(i, j), normals(i, j));
 
-    cone = makeMatrix<MPInt>(7, 7, {{ MPInt(4),  MPInt(9),  MPInt(3),  MPInt(4), MPInt(13),  MPInt(4), MPInt(11)},
-                                    { MPInt(6),  MPInt(5),  MPInt(5), MPInt(13),  MPInt(8), MPInt(14),  MPInt(8)},
-                                    { MPInt(3),  MPInt(6),  MPInt(6),  MPInt(7),  MPInt(7), MPInt(14),  MPInt(9)},
-                                    { MPInt(9),  MPInt(7),  MPInt(7),  MPInt(3),  MPInt(9),  MPInt(6),  MPInt(5)},
-                                    {MPInt(14), MPInt(13),  MPInt(4), MPInt(10), MPInt(10),  MPInt(7), MPInt(11)},
-                                    { MPInt(4),  MPInt(7),  MPInt(3),  MPInt(5),  MPInt(2), MPInt(11),  MPInt(4)},
-                                    { MPInt(7),  MPInt(8),  MPInt(4), MPInt(11),  MPInt(5), MPInt(11), MPInt(12)}});
+    cone = makeIntMatrix(7, 7, {{ 4,  9,  3,  4, 13,  4, 11},
+                                { 6,  5,  5, 13,  8, 14,  8},
+                                { 3,  6,  6,  7,  7, 14,  9},
+                                { 9,  7,  7,  3,  9,  6,  5},
+                                {14, 13,  4, 10, 10,  7, 11},
+                                { 4,  7,  3,  5,  2, 11,  4},
+                                { 7,  8,  4, 11,  5, 11, 12}});
     normals = cone.integerInverse().transpose();
     normals.normalizeByRows();
 
@@ -89,16 +89,16 @@ TEST(BarvinokTest, genToIneq) {
         for (unsigned j = 0; j < 7u; j++)
             EXPECT_EQ(coneH(i, j), normals(i, j));
 
-    cone = makeMatrix<MPInt>(10, 10, {{MPInt(14), MPInt(11),  MPInt(8),  MPInt(3),  MPInt(3),  MPInt(4), MPInt(13), MPInt(14), MPInt(12), MPInt(11)},
-                                      {MPInt(14),  MPInt(3), MPInt(12),  MPInt(2), MPInt(12), MPInt(11), MPInt(10),  MPInt(9),  MPInt(9), MPInt(14)},
-                                      { MPInt(5),  MPInt(5),  MPInt(6),  MPInt(5), MPInt(13),  MPInt(7), MPInt(14), MPInt(10), MPInt(10),  MPInt(3)},
-                                      { MPInt(9), MPInt(13),  MPInt(9), MPInt(10),  MPInt(2),  MPInt(3),  MPInt(4), MPInt(12), MPInt(14), MPInt(11)},
-                                      { MPInt(4),  MPInt(7), MPInt(13),  MPInt(9), MPInt(14), MPInt(12),  MPInt(2),  MPInt(7),  MPInt(8), MPInt(12)},
-                                      { MPInt(5), MPInt(10),  MPInt(8), MPInt(11), MPInt(11), MPInt(11),  MPInt(9),  MPInt(2),  MPInt(2),  MPInt(9)},
-                                      {MPInt(11), MPInt(11),  MPInt(7),  MPInt(9),  MPInt(7), MPInt(12),  MPInt(3),  MPInt(7),  MPInt(4), MPInt(11)},
-                                      { MPInt(4),  MPInt(3), MPInt(10), MPInt(12),  MPInt(3),  MPInt(2),  MPInt(2),  MPInt(3),  MPInt(8),  MPInt(5)},
-                                      { MPInt(5),  MPInt(4),  MPInt(6),  MPInt(8),  MPInt(3),  MPInt(3),  MPInt(5),  MPInt(6), MPInt(13),  MPInt(9)},
-                                      { MPInt(6),  MPInt(2), MPInt(12),  MPInt(5),  MPInt(4), MPInt(12), MPInt(14),  MPInt(9),  MPInt(4),  MPInt(7)}});
+    cone = makeIntMatrix(10, 10, {{14, 11,  8,  3,  3,  4, 13, 14, 12, 11},
+                                  {14,  3, 12,  2, 12, 11, 10,  9,  9, 14},
+                                  { 5,  5,  6,  5, 13,  7, 14, 10, 10,  3},
+                                  { 9, 13,  9, 10,  2,  3,  4, 12, 14, 11},
+                                  { 4,  7, 13,  9, 14, 12,  2,  7,  8, 12},
+                                  { 5, 10,  8, 11, 11, 11,  9,  2,  2,  9},
+                                  {11, 11,  7,  9,  7, 12,  3,  7,  4, 11},
+                                  { 4,  3, 10, 12,  3,  2,  2,  3,  8,  5},
+                                  { 5,  4,  6,  8,  3,  3,  5,  6, 13,  9},
+                                  { 6,  2, 12,  5,  4, 12, 14,  9,  4,  7}});
     normals = cone.integerInverse().transpose();
     normals.normalizeByRows();
 
@@ -111,30 +111,30 @@ TEST(BarvinokTest, genToIneq) {
 }
 
 TEST(BarvinokTest, triangulate) {
-    ConeV cone = makeMatrix<MPInt>(4, 3, {{MPInt(3), MPInt(0), MPInt(4)},
-                                          {MPInt(4), MPInt(5), MPInt(0)},
-                                          {MPInt(0), MPInt(3), MPInt(5)},
-                                          {MPInt(0), MPInt(0), MPInt(3)}});
+    ConeV cone = makeIntMatrix(4, 3, {{3, 0, 4},
+                                      {4, 5, 0},
+                                      {0, 3, 5},
+                                      {0, 0, 3}});
     
     SmallVector<ConeV, 2> decomp = triangulate(cone);
     EXPECT_EQ(decomp.size(), 2u);
 
     for (unsigned i = 0; i < 3u; i++)
         for (unsigned j = 0; j < 3u; j++)
-            EXPECT_EQ(decomp[1](i, j), makeMatrix<MPInt>(3, 3, {{MPInt(3), MPInt(0), MPInt(4)},
-                                                                {MPInt(4), MPInt(5), MPInt(0)},
-                                                                {MPInt(0), MPInt(0), MPInt(3)}})(i, j));
+            EXPECT_EQ(decomp[1](i, j), makeIntMatrix(3, 3, {{3, 0, 4},
+                                                            {4, 5, 0},
+                                                            {0, 0, 3}})(i, j));
     for (unsigned i = 0; i < 3u; i++)
         for (unsigned j = 0; j < 3u; j++)
-            EXPECT_EQ(decomp[0](i, j), makeMatrix<MPInt>(3, 3, {{MPInt(4), MPInt(5), MPInt(0)},
-                                                                {MPInt(0), MPInt(3), MPInt(5)},
-                                                                {MPInt(0), MPInt(0), MPInt(3)}})(i, j));
+            EXPECT_EQ(decomp[0](i, j), makeIntMatrix(3, 3, {{4, 5, 0},
+                                                            {0, 3, 5},
+                                                            {0, 0, 3}})(i, j));
 }
 
 TEST(BarvinokTest, unimodDecomp) {
     ConeH cone = defineHRep(2, 2);
-    Matrix<MPInt> ineqs = makeMatrix<MPInt>(2, 3, {{MPInt(0),  MPInt(1), MPInt(0)},
-                                                   {MPInt(3), -MPInt(1), MPInt(0)}});
+    Matrix<MPInt> ineqs = makeIntMatrix(2, 3, {{0,  1, 0},
+                                               {3, -1, 0}});
     for (unsigned i = 0; i < 2; i++)
         cone.addInequality(ineqs.getRow(i));
 
@@ -167,9 +167,9 @@ TEST(BarvinokTest, unimodDecomp) {
 
     cone = defineHRep(3, 3);
     // This is the cone whose V-rep is [[3, 0, 4], [4, 5, 0], [0, 5, 3]]
-    ineqs = makeMatrix<MPInt>(3, 4, {{MPInt(-20),  MPInt(16), MPInt(15), MPInt(0)},
-                                     {MPInt(20), MPInt(9), MPInt(-15), MPInt(0)},
-                                     {MPInt(15), MPInt(-12), MPInt(20), MPInt(0)}});
+    ineqs = makeIntMatrix(3, 4, {{-20,  16, 15, 0},
+                                 {20, 9, -15, 0},
+                                 {15, -12, 20, 0}});
     for (unsigned i = 0; i < 3; i++)
         cone.addInequality(ineqs.getRow(i));
 
@@ -180,97 +180,97 @@ TEST(BarvinokTest, unimodDecomp) {
     for (unsigned i = 0; i < 3; i++)
         for (unsigned j = 0; j < 3; j++)
             EXPECT_EQ(decomp[0].second.atIneq(i, j),
-                      makeMatrix<MPInt>(3, 3, {{MPInt(5), -MPInt(4), MPInt(7)}, {MPInt(4), -MPInt(3), MPInt(5)}, {MPInt(15), -MPInt(12), MPInt(20)}})(i, j));
+                      makeIntMatrix(3, 3, {{5, -4, 7}, {4, -3, 5}, {15, -12, 20}})(i, j));
     EXPECT_EQ(decomp[1].first, 1);
     for (unsigned i = 0; i < 3; i++)
         for (unsigned j = 0; j < 3; j++)
             EXPECT_EQ(decomp[1].second.atIneq(i, j),
-                      makeMatrix<MPInt>(3, 3, {{MPInt(0), MPInt(0), MPInt(1)}, {MPInt(4), -MPInt(3), MPInt(5)}, {MPInt(5), -MPInt(4), MPInt(7)}})(i, j));
+                      makeIntMatrix(3, 3, {{0, 0, 1}, {4, -3, 5}, {5, -4, 7}})(i, j));
     EXPECT_EQ(decomp[2].first, 1);
     for (unsigned i = 0; i < 3; i++)
         for (unsigned j = 0; j < 3; j++)
             EXPECT_EQ(decomp[2].second.atIneq(i, j),
-                      makeMatrix<MPInt>(3, 3, {{MPInt(1), -MPInt(1), MPInt(2)}, {MPInt(1), -MPInt(0), MPInt(0)}, {MPInt(4), -MPInt(3), MPInt(5)}})(i, j));
+                      makeIntMatrix(3, 3, {{1, -1, 2}, {1, -0, 0}, {4, -3, 5}})(i, j));
     EXPECT_EQ(decomp[3].first, -1);
     for (unsigned i = 0; i < 3; i++)
         for (unsigned j = 0; j < 3; j++)
             EXPECT_EQ(decomp[3].second.atIneq(i, j),
-                      makeMatrix<MPInt>(3, 3, {{MPInt(0), MPInt(0), MPInt(1)}, {MPInt(1), -MPInt(1), MPInt(2)}, {MPInt(4), -MPInt(3), MPInt(5)}})(i, j));
+                      makeIntMatrix(3, 3, {{0, 0, 1}, {1, -1, 2}, {4, -3, 5}})(i, j));
     EXPECT_EQ(decomp[4].first, 1);
     for (unsigned i = 0; i < 3; i++)
         for (unsigned j = 0; j < 3; j++)
             EXPECT_EQ(decomp[4].second.atIneq(i, j),
-                      makeMatrix<MPInt>(3, 3, {{MPInt(0), MPInt(0), MPInt(1)}, {MPInt(1), MPInt(0), MPInt(0)}, {MPInt(1), -MPInt(1), MPInt(2)}})(i, j));
+                      makeIntMatrix(3, 3, {{0, 0, 1}, {1, 0, 0}, {1, -1, 2}})(i, j));
     EXPECT_EQ(decomp[5].first, 1);
     for (unsigned i = 0; i < 3; i++)
         for (unsigned j = 0; j < 3; j++)
             EXPECT_EQ(decomp[5].second.atIneq(i, j),
-                      makeMatrix<MPInt>(3, 3, {{-MPInt(1), MPInt(1), MPInt(1)}, {MPInt(1), MPInt(0), MPInt(0)}, {MPInt(0), MPInt(0), MPInt(1)}})(i, j));
+                      makeIntMatrix(3, 3, {{-1, 1, 1}, {1, 0, 0}, {0, 0, 1}})(i, j));
     EXPECT_EQ(decomp[6].first, 1);
     for (unsigned i = 0; i < 3; i++)
         for (unsigned j = 0; j < 3; j++)
             EXPECT_EQ(decomp[6].second.atIneq(i, j),
-                      makeMatrix<MPInt>(3, 3, {{-MPInt(5), MPInt(4), MPInt(4)}, {-MPInt(1), MPInt(1), MPInt(1)}, {MPInt(0), MPInt(0), MPInt(1)}})(i, j));
+                      makeIntMatrix(3, 3, {{-5, 4, 4}, {-1, 1, 1}, {0, 0, 1}})(i, j));
     EXPECT_EQ(decomp[7].first, 1);
     for (unsigned i = 0; i < 3; i++)
         for (unsigned j = 0; j < 3; j++)
             EXPECT_EQ(decomp[7].second.atIneq(i, j),
-                      makeMatrix<MPInt>(3, 3, {{-MPInt(20), MPInt(16), MPInt(15)}, {-MPInt(1), MPInt(1), MPInt(1)}, {-MPInt(5), MPInt(4), MPInt(4)}})(i, j));
+                      makeIntMatrix(3, 3, {{-20, 16, 15}, {-1, 1, 1}, {-5, 4, 4}})(i, j));
     EXPECT_EQ(decomp[8].first, 1);
     for (unsigned i = 0; i < 3; i++)
         for (unsigned j = 0; j < 3; j++)
             EXPECT_EQ(decomp[8].second.atIneq(i, j),
-                      makeMatrix<MPInt>(3, 3, {{-MPInt(20), MPInt(16), MPInt(15)}, {MPInt(1), MPInt(0), MPInt(0)}, {-MPInt(1), MPInt(1), MPInt(1)}})(i, j));
+                      makeIntMatrix(3, 3, {{-20, 16, 15}, {1, 0, 0}, {-1, 1, 1}})(i, j));
     EXPECT_EQ(decomp[9].first, 1);
     for (unsigned i = 0; i < 3; i++)
         for (unsigned j = 0; j < 3; j++)
             EXPECT_EQ(decomp[9].second.atIneq(i, j),
-                      makeMatrix<MPInt>(3, 3, {{MPInt(4), MPInt(2), -MPInt(3)}, {MPInt(7), MPInt(3), -MPInt(5)}, {MPInt(1), MPInt(0), MPInt(0)}})(i, j));
+                      makeIntMatrix(3, 3, {{4, 2, -3}, {7, 3, -5}, {1, 0, 0}})(i, j));
     EXPECT_EQ(decomp[10].first, 1);
     for (unsigned i = 0; i < 3; i++)
         for (unsigned j = 0; j < 3; j++)
             EXPECT_EQ(decomp[10].second.atIneq(i, j),
-                      makeMatrix<MPInt>(3, 3, {{MPInt(4), MPInt(2), -MPInt(3)}, {MPInt(20), MPInt(9), -MPInt(15)}, {MPInt(7), MPInt(3), -MPInt(5)}})(i, j));
+                      makeIntMatrix(3, 3, {{4, 2, -3}, {20, 9, -15}, {7, 3, -5}})(i, j));
     EXPECT_EQ(decomp[11].first, -1);
     for (unsigned i = 0; i < 3; i++)
         for (unsigned j = 0; j < 3; j++)
             EXPECT_EQ(decomp[11].second.atIneq(i, j),
-                      makeMatrix<MPInt>(3, 3, {{-MPInt(1), -MPInt(1), MPInt(1)}, {MPInt(4), MPInt(2), -MPInt(3)}, {MPInt(1), MPInt(0), MPInt(0)}})(i, j));
+                      makeIntMatrix(3, 3, {{-1, -1, 1}, {4, 2, -3}, {1, 0, 0}})(i, j));
     EXPECT_EQ(decomp[12].first, -1);
     for (unsigned i = 0; i < 3; i++)
         for (unsigned j = 0; j < 3; j++)
             EXPECT_EQ(decomp[12].second.atIneq(i, j),
-                      makeMatrix<MPInt>(3, 3, {{MPInt(0), MPInt(1), MPInt(0)}, {-MPInt(1), -MPInt(1), MPInt(1)}, {MPInt(1), MPInt(0), MPInt(0)}})(i, j));
+                      makeIntMatrix(3, 3, {{0, 1, 0}, {-1, -1, 1}, {1, 0, 0}})(i, j));
     EXPECT_EQ(decomp[13].first, 1);
     for (unsigned i = 0; i < 3; i++)
         for (unsigned j = 0; j < 3; j++)
             EXPECT_EQ(decomp[13].second.atIneq(i, j),
-                      makeMatrix<MPInt>(3, 3, {{MPInt(0), MPInt(1), MPInt(0)}, {MPInt(4), MPInt(2), -MPInt(3)}, {-MPInt(1), -MPInt(1), MPInt(1)}})(i, j));
+                      makeIntMatrix(3, 3, {{0, 1, 0}, {4, 2, -3}, {-1, -1, 1}})(i, j));
     EXPECT_EQ(decomp[14].first, 1);
     for (unsigned i = 0; i < 3; i++)
         for (unsigned j = 0; j < 3; j++)
             EXPECT_EQ(decomp[14].second.atIneq(i, j),
-                      makeMatrix<MPInt>(3, 3, {{-MPInt(1), MPInt(1), MPInt(1)}, {MPInt(0), MPInt(1), MPInt(0)}, {MPInt(1), MPInt(0), MPInt(0)}})(i, j));
+                      makeIntMatrix(3, 3, {{-1, 1, 1}, {0, 1, 0}, {1, 0, 0}})(i, j));
     EXPECT_EQ(decomp[15].first, -1);
     for (unsigned i = 0; i < 3; i++)
         for (unsigned j = 0; j < 3; j++)
             EXPECT_EQ(decomp[15].second.atIneq(i, j),
-                      makeMatrix<MPInt>(3, 3, {{MPInt(4), -MPInt(3), -MPInt(3)}, {MPInt(0), MPInt(1), MPInt(0)}, {-MPInt(1), MPInt(1), MPInt(1)}})(i, j));
+                      makeIntMatrix(3, 3, {{4, -3, -3}, {0, 1, 0}, {-1, 1, 1}})(i, j));
     EXPECT_EQ(decomp[16].first, -1);
     for (unsigned i = 0; i < 3; i++)
         for (unsigned j = 0; j < 3; j++)
             EXPECT_EQ(decomp[16].second.atIneq(i, j),
-                      makeMatrix<MPInt>(3, 3, {{MPInt(-20), MPInt(16), MPInt(15)}, {-MPInt(1), MPInt(1), MPInt(1)}, {MPInt(1), MPInt(0), MPInt(0)}})(i, j));
+                      makeIntMatrix(3, 3, {{-20, 16, 15}, {-1, 1, 1}, {1, 0, 0}})(i, j));
     EXPECT_EQ(decomp[17].first, 1);
     for (unsigned i = 0; i < 3; i++)
         for (unsigned j = 0; j < 3; j++)
             EXPECT_EQ(decomp[17].second.atIneq(i, j),
-                      makeMatrix<MPInt>(3, 3, {{MPInt(-20), MPInt(16), MPInt(15)}, {MPInt(4), -MPInt(3), -MPInt(3)}, {-MPInt(1), MPInt(1), MPInt(1)}})(i, j));
+                      makeIntMatrix(3, 3, {{-20, 16, 15}, {4, -3, -3}, {-1, 1, 1}})(i, j));
 }
 
 TEST(BarvinokTest, unimodGenFunc) {
     ConeH cone = defineHRep(2, 2);
-    Matrix<MPInt> ineqs = makeMatrix<MPInt>(2, 3, {{MPInt(1), MPInt(-10), MPInt(0)}, {MPInt(0), MPInt(1), MPInt(0)}});
+    Matrix<MPInt> ineqs = makeIntMatrix(2, 3, {{1, -10, 0}, {0, 1, 0}});
     for (unsigned i = 0; i < 2u; i++)
         cone.addInequality(ineqs.getRow(i));
     
@@ -361,12 +361,12 @@ TEST(BarvinokTest, substituteWithUnitVector) {
 }
 
 TEST(BarvinokTest, polytopeGeneratingFunction) {
-    Matrix<MPInt> ineqs = makeMatrix<MPInt>(6, 4, {{MPInt(1), MPInt(0), MPInt(0), MPInt(0)},
-                                                   {MPInt(0), MPInt(1), MPInt(0), MPInt(0)},
-                                                   {MPInt(0), MPInt(0), MPInt(1), MPInt(0)},
-                                                   {MPInt(-1), MPInt(0), MPInt(0), MPInt(1)},
-                                                   {MPInt(0), MPInt(-1), MPInt(0), MPInt(1)},
-                                                   {MPInt(0), MPInt(0), MPInt(-1), MPInt(1)}});
+    Matrix<MPInt> ineqs = makeIntMatrix(6, 4, {{1, 0, 0, 0},
+                                               {0, 1, 0, 0},
+                                               {0, 0, 1, 0},
+                                               {-1, 0, 0, 1},
+                                               {0, -1, 0, 1},
+                                               {0, 0, -1, 1}});
     PolyhedronH cube = defineHRep(6, 3);
     for (unsigned i = 0; i < 6; i++)
         cube.addInequality(ineqs.getRow(i));
