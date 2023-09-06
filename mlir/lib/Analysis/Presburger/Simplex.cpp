@@ -435,9 +435,9 @@ LogicalResult SymbolicLexSimplex::addSymbolicCut(unsigned row) {
   return moveRowUnknownToColumn(cutRow);
 }
 
-void SymbolicLexSimplex::recordOutput(SymbolicLexOpt &result) const {
+void SymbolicLexSimplex::recordOutput(SymbolicLexMin &result) const {
   Matrix<MPInt> output(0, domainPoly.getNumVars() + 1);
-  output.reserveRows(result.lexopt.getNumOutputs());
+  output.reserveRows(result.lexmin.getNumOutputs());
   for (const Unknown &u : var) {
     if (u.isSymbol)
       continue;
@@ -469,10 +469,10 @@ void SymbolicLexSimplex::recordOutput(SymbolicLexOpt &result) const {
   }
 
   // Store the output in a MultiAffineFunction and add it the result.
-  PresburgerSpace funcSpace = result.lexopt.getSpace();
+  PresburgerSpace funcSpace = result.lexmin.getSpace();
   funcSpace.insertVar(VarKind::Local, 0, domainPoly.getNumLocalVars());
 
-  result.lexopt.addPiece(
+  result.lexmin.addPiece(
       {PresburgerSet(domainPoly),
        MultiAffineFunction(funcSpace, output, domainPoly.getLocalReprs())});
 }
@@ -515,8 +515,8 @@ LogicalResult SymbolicLexSimplex::doNonBranchingPivots() {
   return success();
 }
 
-SymbolicLexOpt SymbolicLexSimplex::computeSymbolicIntegerLexMin() {
-  SymbolicLexOpt result(PresburgerSpace::getRelationSpace(
+SymbolicLexMin SymbolicLexSimplex::computeSymbolicIntegerLexMin() {
+  SymbolicLexMin result(PresburgerSpace::getRelationSpace(
       /*numDomain=*/domainPoly.getNumDimVars(),
       /*numRange=*/var.size() - nSymbol,
       /*numSymbols=*/domainPoly.getNumSymbolVars()));
