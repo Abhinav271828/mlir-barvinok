@@ -628,3 +628,10 @@ Fraction mlir::presburger::substituteWithUnitVector(GeneratingFunction gf)
     return totalTerm;
 
 }
+
+MPInt mlir::presburger::countIntegerPoints(PolyhedronH poly)
+{
+    GeneratingFunction gf = polytopeGeneratingFunction(poly);
+    Fraction f = substituteWithUnitVector(gf);
+    return f.getAsInteger();
+}
