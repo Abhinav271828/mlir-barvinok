@@ -28,6 +28,7 @@ using PolyhedronH = IntegerRelation;
 using PolyhedronV = Matrix<MPInt>;
 using ConeH = PolyhedronH;
 using ConeV = PolyhedronV;
+using ParamPoint = Matrix<Fraction>;
 using Point = SmallVector<Fraction>;
 
 // Describe the type of generating function
@@ -139,6 +140,9 @@ SmallVector<ConeV, 16> triangulate(ConeV);
 
 // Compute the generating function for a unimodular cone.
 GeneratingFunction unimodularConeGeneratingFunction(Point, int, ConeH);
+
+// Compute the (parametric) vertex from a subset of inequalities, if any such exists.
+std::optional<ParamPoint> findVertex(Matrix<MPInt>);
 
 // Compute the generating function for a polytope,
 // as the sum of generating functions of its tangent cones.

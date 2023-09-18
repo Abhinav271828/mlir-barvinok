@@ -379,6 +379,61 @@ GeneratingFunction mlir::presburger::unimodularConeGeneratingFunction(Point vert
     return gf;
 }
 
+std::optional<ParamPoint> mlir::presburger::findVertex(Matrix<MPInt> equations)
+{
+    // `equalities` is a d x (d + p + 1) matrix.
+
+    unsigned r = equations.getNumRows();
+    unsigned c = equations.getNumColumns();
+
+    Matrix<MPInt> coeffs(r, r);
+    for (unsigned i = 0; i < r; i++)
+        for (unsigned j = 0; j < r; j++)
+            coeffs(i, j) = equations(i, j), 1;
+    
+    if (coeffs.determinant() == MPInt(0))
+        return std::nullopt;
+
+    Matrix<Fraction> equationsF(r, c);
+    for (unsigned i = 0; i < r; i++)
+        for (unsigned j = 0; j < c; j++)
+            equationsF(i, j) = Fraction(equations(i, j), 1);
+    
+    Fraction a, b;
+    for (unsigned i = 0; i < r; i++)
+    {
+        if (equationsF(i, i) == Fraction(0, 1))
+            for (unsigned j = i+1; j < r; j++)
+                if (equationsF(j, i) != 0)
+                {
+                    equationsF.addToRow(i, equationsF.getRow(j), Fraction(1, 1));
+                    break;
+                }
+        b = equationsF(i, i);
+
+        for (unsigned j = 0; j < r; j++)
+        {
+            if (equationsF(j, i) == 0 || j == i) continue;
+            a = equationsF(j, i);
+            equationsF.addToRow(j, equationsF.getRow(i), - a / b);
+        }
+    }
+
+    for (unsigned i = 0; i < r; i++)
+    {
+        a = equationsF(i, i);
+        for (unsigned j = 0; j < c; j++)
+            equationsF(i, j) = equationsF(i, j) / a;
+    }
+
+    ParamPoint vertex(r, c-r);
+    for (unsigned i = 0; i < r; i++)
+        for (unsigned j = 0; j < c-r; j++)
+            vertex(i, j) = -equationsF(i, r+j);
+    
+    return vertex;
+}
+
 GeneratingFunction mlir::presburger::polytopeGeneratingFunction(PolyhedronH poly)
 {
     SmallVector<ConeH, 4> tgtCones;

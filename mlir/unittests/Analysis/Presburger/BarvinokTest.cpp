@@ -360,6 +360,17 @@ TEST(BarvinokTest, substituteWithUnitVector) {
     EXPECT_EQ(numPoints, Fraction(6, 1));
 }
 
+TEST(BarvinokTest, findVertex) {
+    Matrix<MPInt> eqs = makeIntMatrix(2, 5, {{-1, 0,  2, 2, 0},
+                                             {-1, -2, 0, 1, 2}});
+    std::optional<ParamPoint> v = findVertex(eqs);
+
+    for (unsigned i = 0; i < 2; i++)
+        for (unsigned j = 0; j < 3; j++)
+            EXPECT_EQ((*v)(i, j), makeFracMatrix(2, 3, {{Fraction(2, 1), Fraction(2, 1), Fraction(0, 1)},
+                                                      {Fraction(-1, 1), Fraction(-1, 2), Fraction(1, 1)}})(i, j));
+}
+
 TEST(BarvinokTest, polytopeGeneratingFunction) {
     Matrix<MPInt> ineqs = makeIntMatrix(6, 4, {{1, 0, 0, 0},
                                                {0, 1, 0, 0},
