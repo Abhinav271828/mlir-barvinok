@@ -101,14 +101,14 @@ public:
     std::vector<std::vector<Point>> denominators;
 };
 
-inline ConeH defineHRep(int num_ineqs, int num_vars)
+inline ConeH defineHRep(int num_ineqs, int num_vars, int num_params = 0)
 {
     // We don't distinguish between domain and range variables, so
     // we set the number of domain variables as 0 and the number of
     // range variables as the number of actual variables.
     // There are no symbols (non-parametric for now) and no local
     // (existentially quantified) variables.
-    ConeH cone(PresburgerSpace::getRelationSpace(0, num_vars, 0, 0));
+    ConeH cone(PresburgerSpace::getRelationSpace(0, num_vars, num_params, 0));
     return cone;
 }
 
