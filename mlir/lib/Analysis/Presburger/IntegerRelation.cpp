@@ -286,8 +286,11 @@ IntegerRelation::isFullDim() {
       auto ineq = inequalities.getRow(i);
       auto upOpt = simplex.computeOptimum(Simplex::Direction::Up, ineq);
       auto downOpt = simplex.computeOptimum(Simplex::Direction::Down, ineq);
-      if (upOpt.getKind() != OptimumKind::Empty &&
-          downOpt.getKind() != OptimumKind::Empty &&
+      if (upOpt.getKind() == OptimumKind::Unbounded ||
+          downOpt.getKind() == OptimumKind::Unbounded)
+            continue;
+      if (upOpt.getKind() == OptimumKind::Bounded &&
+          downOpt.getKind() == OptimumKind::Bounded &&
           *upOpt == *downOpt) // ineq == 0 holds for this
         return false;
     }
