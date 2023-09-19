@@ -673,6 +673,12 @@ public:
   /// return `this \ set`.
   PresburgerRelation subtract(const PresburgerRelation &set) const;
 
+  // Remove equalities in which all the coefficients and the constant term are 0.
+  void removeTrivialEqualities();
+
+  // Check if the relation is full-dimensional.
+  bool isFullDim();
+
   void print(raw_ostream &os) const;
   void dump() const;
 

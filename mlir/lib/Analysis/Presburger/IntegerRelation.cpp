@@ -259,6 +259,41 @@ IntegerRelation::subtract(const PresburgerRelation &set) const {
   return PresburgerRelation(*this).subtract(set);
 }
 
+void
+IntegerRelation::removeTrivialEqualities() {
+    bool flag;
+    for (unsigned i = 0; i < getNumEqualities(); i++)
+    {
+        flag = true;
+        for (unsigned j = 0; j < getNumVars()+1; j++)
+            if (atEq(i, j) != 0)
+                flag = false;
+        if (flag)
+            removeEquality(i);
+    }
+}
+
+bool
+IntegerRelation::isFullDim() {
+    removeTrivialEqualities(); // to implement: remove equalities that are `0 = 0`
+
+    if (getNumEqualities() > 0)
+      return true;
+
+    Simplex simplex(*this);
+    for (unsigned i = 0; i < getNumInequalities(); i++)
+    {
+      auto ineq = inequalities.getRow(i);
+      auto upOpt = simplex.computeOptimum(Simplex::Direction::Up, ineq);
+      auto downOpt = simplex.computeOptimum(Simplex::Direction::Down, ineq);
+      if (upOpt.getKind() != OptimumKind::Empty &&
+          downOpt.getKind() != OptimumKind::Empty &&
+          *upOpt == *downOpt) // ineq == 0 holds for this
+        return false;
+    }
+    return true;
+  }
+
 unsigned IntegerRelation::insertVar(VarKind kind, unsigned pos, unsigned num) {
   assert(pos <= getNumVarKind(kind));
 
