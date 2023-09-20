@@ -444,203 +444,148 @@ GeneratingFunction mlir::presburger::polytopeGeneratingFunction(PolyhedronH poly
     GeneratingFunction gf({}, {}, {});
     ConeH tgtCone = defineHRep(d, d);
 
-    if (p > 0)
-    {
-        Matrix<MPInt> subset(d, d+p+1);
-        std::vector<Matrix<MPInt>> subsets; // Stores the inequality subsets corresponding to each vertex.
-        Matrix<Fraction> remaining(n-d, d+p+1);
+    Matrix<MPInt> subset(d, d+p+1);
+    std::vector<Matrix<MPInt>> subsets; // Stores the inequality subsets corresponding to each vertex.
+    Matrix<Fraction> remaining(n-d, d+p+1);
 
-        std::optional<ParamPoint> vertex;
-        std::vector<ParamPoint> vertices;
+    std::optional<ParamPoint> vertex;
+    std::vector<ParamPoint> vertices;
 
-        Matrix<Fraction> a2(n-d, d);
-        Matrix<Fraction> b2c2(n-d, p+1);
+    Matrix<Fraction> a2(n-d, d);
+    Matrix<Fraction> b2c2(n-d, p+1);
 
-        Matrix<Fraction> activeRegion(n-d, p+1);
-        Matrix<MPInt> activeRegionNorm(n-d, p+1);
-        MPInt lcmDenoms;
-        IntegerRelation activeRegionRel(PresburgerSpace::getRelationSpace(0, p, 0, 0));
-        // The active region will be defined as activeRegionCoeffs @ p + activeRegionConstant ≥ 0.
-        // The active region is a polyhedron in parameter space.
-        std::vector<PresburgerRelation> activeRegions;
+    Matrix<Fraction> activeRegion(n-d, p+1);
+    Matrix<MPInt> activeRegionNorm(n-d, p+1);
+    MPInt lcmDenoms;
+    IntegerRelation activeRegionRel(PresburgerSpace::getRelationSpace(0, p, 0, 0));
+    // The active region will be defined as activeRegionCoeffs @ p + activeRegionConstant ≥ 0.
+    // The active region is a polyhedron in parameter space.
+    std::vector<PresburgerRelation> activeRegions;
     
 
-        for (std::bitset<16> indicator(((1ul << d)-1ul) << (n-d));
-            indicator.to_ulong() <= ((1ul << d)-1ul) << (n-d);              // d 1's followed by n-d 0's
-            indicator = std::bitset<16>(indicator.to_ulong() - 1))
+    for (std::bitset<16> indicator(((1ul << d)-1ul) << (n-d));
+        indicator.to_ulong() <= ((1ul << d)-1ul) << (n-d);              // d 1's followed by n-d 0's
+        indicator = std::bitset<16>(indicator.to_ulong() - 1))
+    {
+        if (indicator.count() != d)
+            continue;
+
+        subset = Matrix<MPInt>(d, d+p+1);
+        remaining = Matrix<Fraction>(n-d, d+p+1);
+        unsigned j1 = 0, j2 = 0;
+        for (unsigned i = 0; i < n; i++)
+            if (indicator.test(i))
+                subset.setRow(j1++, poly.getInequality(i));
+                // [A1 | B1 | c1]
+            else
+            {
+                for (unsigned k = 0; k < d; k++)
+                    a2(j2, k) = Fraction(poly.atIneq(i, k), 1);
+                for (unsigned k = d; k < d+p+1; k++)
+                    b2c2(j2, k-d) = Fraction(poly.atIneq(i, k), 1);
+                j2++;
+                // [A2 | B2 | c2]
+            }
+
+        vertex = findVertex(subset);
+
+        if (vertex == std::nullopt) continue;
+        vertices.push_back(*vertex);
+        subsets.push_back(subset);
+
+        // Region is given by (A2 @ X + B2) p + (A2 @ y + c2) ≥ 0
+        // This is equivt to A2 @ [X | y] + [B2 | c2]
+        // We premultiply [X | y] with each row of A2 and add each row of [B2 | c2].
+        for (unsigned i = 0; i < n-d; i++)
         {
-            if (indicator.count() != d)
-                continue;
-
-            subset = Matrix<MPInt>(d, d+p+1);
-            remaining = Matrix<Fraction>(n-d, d+p+1);
-            unsigned j1 = 0, j2 = 0;
-            for (unsigned i = 0; i < n; i++)
-                if (indicator.test(i))
-                    subset.setRow(j1++, poly.getInequality(i));
-                    // [A1 | B1 | c1]
-                else
-                {
-                    for (unsigned k = 0; k < d; k++)
-                        a2(j2, k) = Fraction(poly.atIneq(i, k), 1);
-                    for (unsigned k = d; k < d+p+1; k++)
-                        b2c2(j2, k-d) = Fraction(poly.atIneq(i, k), 1);
-                    j2++;
-                    // [A2 | B2 | c2]
-                }
-
-            vertex = findVertex(subset);
-
-            if (vertex == std::nullopt) continue;
-            vertices.push_back(*vertex);
-            subsets.push_back(subset);
-
-            // Region is given by (A2 @ X + B2) p + (A2 @ y + c2) ≥ 0
-            // This is equivt to A2 @ [X | y] + [B2 | c2]
-            // We premultiply [X | y] with each row of A2 and add each row of [B2 | c2].
-            for (unsigned i = 0; i < n-d; i++)
-            {
-                activeRegion.setRow(i, (*vertex).preMultiplyWithRow(a2.getRow(i)));
-                activeRegion.addToRow(i, b2c2.getRow(i), Fraction(1, 1));
-            }
-
-            activeRegionNorm = Matrix<MPInt>(n-d, p+1);
-            activeRegionRel = IntegerRelation(PresburgerSpace::getRelationSpace(0, p, 0, 0));
-            lcmDenoms = 1;
-            for (unsigned i = 0; i < n-d; i++)
-            {
-                for (unsigned j = 0; j < p+1; j++)
-                    lcmDenoms = lcm(lcmDenoms, activeRegion(i, j).den);
-                for (unsigned j = 0; j < p+1; j++)
-                    activeRegionNorm(i, j) = (activeRegion(i, j) * Fraction(lcmDenoms, 1)).getAsInteger();
-
-                activeRegionRel.addInequality(activeRegionNorm.getRow(i));
-            }
-
-            activeRegions.push_back(PresburgerRelation(activeRegionRel));
+            activeRegion.setRow(i, (*vertex).preMultiplyWithRow(a2.getRow(i)));
+            activeRegion.addToRow(i, b2c2.getRow(i), Fraction(1, 1));
         }
 
-        // Clauss-Loechner chamber decomposition
-        std::vector<std::pair<PresburgerRelation, std::vector<unsigned>>> chambers = 
-            {std::make_pair(activeRegions[0], std::vector({0u}))};
-        std::vector<std::pair<PresburgerRelation, std::vector<unsigned>>> newChambers;
-        for (unsigned j = 1; j < vertices.size(); j++)
+        activeRegionNorm = Matrix<MPInt>(n-d, p+1);
+        activeRegionRel = IntegerRelation(PresburgerSpace::getRelationSpace(0, p, 0, 0));
+        lcmDenoms = 1;
+        for (unsigned i = 0; i < n-d; i++)
         {
-            newChambers.clear();
-            PresburgerRelation r_j = activeRegions[j];
-            ParamPoint v_j = vertices[j];
-            for (unsigned i = 0; i < chambers.size(); i++)
-            {
-                auto [r_i, v_i] = chambers[i];
+            for (unsigned j = 0; j < p+1; j++)
+                lcmDenoms = lcm(lcmDenoms, activeRegion(i, j).den);
+            for (unsigned j = 0; j < p+1; j++)
+                activeRegionNorm(i, j) = (activeRegion(i, j) * Fraction(lcmDenoms, 1)).getAsInteger();
 
-                PresburgerRelation intersection = r_i.intersect(r_j);
-                bool isFullDim = false;
-                for (auto disjunct : intersection.getAllDisjuncts())
-                    if (disjunct.isFullDim())
-                    {
-                        isFullDim = true;
-                        break;
-                    }
-                if (!isFullDim) newChambers.push_back(chambers[i]);
-                else
-                {
-                    PresburgerRelation subtraction = r_i.subtract(r_j);
-                    newChambers.push_back(std::make_pair(subtraction, v_i));
-
-                    v_i.push_back(j);
-                    newChambers.push_back(std::make_pair(intersection, v_i));
-                }
-
-            }
-            for (auto chamber : newChambers)
-                r_j = r_j.subtract(chamber.first);
-
-            newChambers.push_back(std::make_pair(r_j, std::vector({j})));
-
-            chambers.clear();
-            for (auto chamber : newChambers)
-            {
-                bool empty = true;
-                for (auto disjunct : chamber.first.getAllDisjuncts())
-                    if (!disjunct.isEmpty())
-                    {
-                        empty = false;
-                        break;
-                    }
-                if (!empty)
-                    chambers.push_back(chamber);
-            }
+            activeRegionRel.addInequality(activeRegionNorm.getRow(i));
         }
 
-        SmallVector<MPInt> ineq(d+1);
-        for (auto chamber : chambers)
+        activeRegions.push_back(PresburgerRelation(activeRegionRel));
+    }
+
+    // Clauss-Loechner chamber decomposition
+    std::vector<std::pair<PresburgerRelation, std::vector<unsigned>>> chambers = 
+        {std::make_pair(activeRegions[0], std::vector({0u}))};
+    std::vector<std::pair<PresburgerRelation, std::vector<unsigned>>> newChambers;
+    for (unsigned j = 1; j < vertices.size(); j++)
+    {
+        newChambers.clear();
+        PresburgerRelation r_j = activeRegions[j];
+        ParamPoint v_j = vertices[j];
+        for (unsigned i = 0; i < chambers.size(); i++)
         {
-            for (unsigned i : chamber.second)
-            {
-                tgtCone = defineHRep(2, 2);
-                for (unsigned j = 0; j < d; j++)
+            auto [r_i, v_i] = chambers[i];
+
+            PresburgerRelation intersection = r_i.intersect(r_j);
+            bool isFullDim = false;
+            for (auto disjunct : intersection.getAllDisjuncts())
+                if (disjunct.isFullDim())
                 {
-                    for (unsigned k = 0; k < d; k++)
-                        ineq[k] = subsets[i](j, k);
-                    ineq[d] = subsets[i](j, d+p);
-                    tgtCone.addInequality(ineq);
+                    isFullDim = true;
+                    break;
                 }
-                unimodCones = unimodularDecomposition(tgtCone);
-                // TODO
-                // Define generating function computation for parametric cone.
+            if (!isFullDim) newChambers.push_back(chambers[i]);
+            else
+            {
+                PresburgerRelation subtraction = r_i.subtract(r_j);
+                newChambers.push_back(std::make_pair(subtraction, v_i));
+
+                v_i.push_back(j);
+                newChambers.push_back(std::make_pair(intersection, v_i));
             }
+
+        }
+        for (auto chamber : newChambers)
+            r_j = r_j.subtract(chamber.first);
+
+        newChambers.push_back(std::make_pair(r_j, std::vector({j})));
+
+        chambers.clear();
+        for (auto chamber : newChambers)
+        {
+            bool empty = true;
+            for (auto disjunct : chamber.first.getAllDisjuncts())
+                if (!disjunct.isEmpty())
+                {
+                    empty = false;
+                    break;
+                }
+            if (!empty)
+                chambers.push_back(chamber);
         }
     }
-    else
+
+    SmallVector<MPInt> ineq(d+1);
+    for (auto chamber : chambers)
     {
-        Simplex potentialCone(d);
-
-        std::optional<SmallVector<MPInt, 8>> vertex;
-        Point fracVertex;
-        MPInt valueAt;
-
-        for (std::bitset<16> indicator(((1ul << d)-1ul) << (n-d));
-            indicator.to_ulong() <= ((1ul << d)-1ul) << (n-d);              // d 1's followed by n-d 0's
-            indicator = std::bitset<16>(indicator.to_ulong() - 1))
+        for (unsigned i : chamber.second)
         {
-            if (indicator.count() != d)
-                continue;
-
-            potentialCone = Simplex(d);
-            unsigned j = 0;
-            for (unsigned i = 0; i < n; i++)
-                if (indicator.test(i))
-                    potentialCone.addEquality(poly.getInequality(i));
-                else
-                    potentialCone.addInequality(poly.getInequality(i));
-
-            if (potentialCone.isUnbounded() || potentialCone.isEmpty())
-                continue;
-
-            vertex = potentialCone.findIntegerSample();
-            if (vertex == std::nullopt) continue;
-            fracVertex.clear();
-            for (MPInt v : *vertex)
-                fracVertex.push_back((Fraction(v, 1)));
-
-            tgtCone = defineHRep(0, d);
-            for (unsigned i = 0; i < n; i++)
+            tgtCone = defineHRep(d, d);
+            for (unsigned j = 0; j < d; j++)
             {
-                if (indicator.test(i))
-                    tgtCone.addInequality(poly.getInequality(i));
-                else
-                {
-                    valueAt = MPInt(0);
-                    for (unsigned j = 0; j < d; j++)
-                        valueAt = valueAt + (*vertex)[j]*poly.atIneq(i, j);
-                    if (valueAt == poly.atIneq(i, d))
-                        tgtCone.addInequality(poly.getInequality(i));
-                }
+                for (unsigned k = 0; k < d; k++)
+                    ineq[k] = subsets[i](j, k);
+                ineq[d] = subsets[i](j, d+p);
+                tgtCone.addInequality(ineq);
             }
-
             unimodCones = unimodularDecomposition(tgtCone);
-            for (std::pair<int, ConeH> comp : unimodCones)
-                gf = gf + unimodularConeGeneratingFunction(fracVertex, comp.first, comp.second);
+            // TODO
+            // Define generating function computation for parametric cone.
         }
     }
     return gf;
