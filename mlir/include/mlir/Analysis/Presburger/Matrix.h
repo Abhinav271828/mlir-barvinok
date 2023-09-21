@@ -244,6 +244,7 @@ public:
       for (unsigned i = 0; i < m.getNumRows(); i++)
           for (unsigned j = 0; j < m.getNumColumns(); j++)
               if (at(i, j) != m(i, j)) return false;
+      return true;
   }
 
 private:
