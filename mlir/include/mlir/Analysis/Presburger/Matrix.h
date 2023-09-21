@@ -237,6 +237,15 @@ public:
     return sum;
   }
 
+  bool operator==(const Matrix &m) const
+  {
+      if (getNumRows() != m.getNumRows() ||
+          getNumColumns() != m.getNumColumns()) return false;
+      for (unsigned i = 0; i < m.getNumRows(); i++)
+          for (unsigned j = 0; j < m.getNumColumns(); j++)
+              if (at(i, j) != m(i, j)) return false;
+  }
+
 private:
   /// The current number of rows, columns, and reserved columns. The underlying
   /// data vector is viewed as an nRows x nReservedColumns matrix, of which the
