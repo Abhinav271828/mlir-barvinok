@@ -759,7 +759,7 @@ QuasiPolynomial mlir::presburger::substituteWithUnitVector(GeneratingFunction gf
         // -(1 - (s+1)^c) in the denominator and
         // increase the numerator by c.
         if (numNegExps % 2 == 1) sign = - sign;
-        num.constant = -sumNegExps;
+        num = num - sumNegExps;
 
         // Take all the (-s) out, from line 495
         r = dens.size();

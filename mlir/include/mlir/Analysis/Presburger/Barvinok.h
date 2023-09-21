@@ -108,12 +108,11 @@ class QuasiPolynomial
 public:
     QuasiPolynomial(int par = 0,
                     SmallVector<Fraction> coeffs = {},
-                    std::vector<std::vector<SmallVector<Fraction>>> aff = {},
-                    Fraction cons = Fraction(0, 1)) :
-        params(par), coefficients(coeffs), affine(aff), constant(cons) {};
+                    std::vector<std::vector<SmallVector<Fraction>>> aff = {}) :
+        params(par), coefficients(coeffs), affine(aff) {};
     
     QuasiPolynomial(Fraction cons) :
-        params(0), coefficients({}), affine({}), constant(cons) {};
+        params(0), coefficients({cons}), affine({{}}) {};
 
     QuasiPolynomial(QuasiPolynomial const&) = default; //:
         //params(qp.params), coefficients(qp.coefficients), affine(qp.affine), constant(qp.constant) {};
@@ -121,19 +120,18 @@ public:
     int params;
     SmallVector<Fraction> coefficients;
     std::vector<std::vector<SmallVector<Fraction>>> affine;
-    Fraction constant;
 
     // All the operations assume that the number of parameters is equal.
     QuasiPolynomial operator+(const QuasiPolynomial &x)
     {
         coefficients.append(x.coefficients);
         affine.insert(affine.end(), x.affine.begin(), x.affine.end());
-        constant = constant + x.constant;
+        //constant = constant + x.constant;
         return *this;
     }
     QuasiPolynomial operator-(const QuasiPolynomial &x)
     {
-        QuasiPolynomial qp(x.params, x.coefficients, x.affine, x.constant);
+        QuasiPolynomial qp(x.params, x.coefficients, x.affine);
         for (unsigned i = 0; i < x.coefficients.size(); i++)
             qp.coefficients[i] = - qp.coefficients[i];
         return (*this + qp);
@@ -152,15 +150,15 @@ public:
                 product.insert(product.end(), x.affine[j].begin(), x.affine[j].end());
                 qp.affine.push_back(product);
             }
-            qp.coefficients.append({coefficients[i] * x.constant});
-            qp.affine.push_back(affine[i]);
+            //qp.coefficients.append({coefficients[i] * x.constant});
+            //qp.affine.push_back(affine[i]);
         }
-        for (unsigned j = 0; j < x.coefficients.size(); j++)
-        {
-            qp.coefficients.append({constant * x.coefficients[j]});
-            qp.affine.push_back(x.affine[j]);
-        }
-        qp.constant = constant * x.constant;
+        //for (unsigned j = 0; j < x.coefficients.size(); j++)
+        //{
+        //    qp.coefficients.append({constant * x.coefficients[j]});
+        //    qp.affine.push_back(x.affine[j]);
+        //}
+        //qp.constant = constant * x.constant;
 
         return qp;
     };
@@ -168,7 +166,7 @@ public:
     {
         for (unsigned i = 0; i < coefficients.size(); i++)
             coefficients[i] = coefficients[i] / x;
-        constant = constant / x;
+        //constant = constant / x;
         return *this;
     };
 
