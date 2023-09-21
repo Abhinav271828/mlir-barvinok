@@ -330,15 +330,20 @@ SmallVector<ConeV, 16> mlir::presburger::triangulate(ConeV cone)
 }
 
 // Compute the generating function for a unimodular cone.
-GeneratingFunction mlir::presburger::unimodularConeGeneratingFunction(Point vertex, int sign, ConeH cone)
+GeneratingFunction mlir::presburger::unimodularConeGeneratingFunction(ParamPoint vertex, int sign, ConeH cone)
 {
+    // `cone` is assumed to be unimodular. Thus its ray matrix, U,
+    // is the inverse of the transpose of its inequality matrix, `cone`.
     Matrix<Fraction> transp(cone.getNumVars(), cone.getNumInequalities());
     for (unsigned i = 0; i < cone.getNumInequalities(); i++)
         for (unsigned j = 0; j < cone.getNumVars(); j++)
             transp(j, i) = Fraction(cone.atIneq(i, j), MPInt(1));
 
-    Matrix<Fraction> generators = transp.inverse();
+    Matrix<Fraction> generators = transp.inverse(); // This is the U-matrix.
 
+    // The denominators of the generating function
+    // are given by the generators of the cone, i.e.,
+    // the rows of the U-matrix.
     std::vector<Point> denominator(generators.getNumRows());
     ArrayRef<Fraction> row;
     for (unsigned i = 0; i < generators.getNumRows(); i++)
@@ -347,36 +352,43 @@ GeneratingFunction mlir::presburger::unimodularConeGeneratingFunction(Point vert
         denominator[i] = Point(row);
     }
 
-    Fraction element = Fraction(0, 1);
-    Point numerator;
-    int flag = 1;
-    for (unsigned i = 0; i < vertex.size(); i++)
-        if (vertex[i].den != 1)
-        {
-            flag = 0;
-            break;
-        }
-    if (flag == 1)
-        numerator = vertex;
-    else
-    {
-        // `cone` is assumed to be unimodular. Thus its ray matrix
-        // is the inverse of its transpose.
-        // We need to find c such that v = c @ rays = c @ (cone^{-1})^T.
-        // Thus c = v @ cone^T.
-        SmallVector<Fraction> coefficients = transp.preMultiplyWithRow(vertex);
-        for (unsigned i = 0; i < coefficients.size(); i++)
-            coefficients[i] = Fraction(ceil(coefficients[i]), MPInt(1));
+    // Vertex is v : [d, n+1].
+    // We need to find affine functions of parameters λi(p)
+    // such that v = Σ λi(p)*ui.
+    // The λi are given by the columns of Λ = v^T @ U^{-1} = v^T @ transp.
+    // Then the numerator will be Σ -floor(-λi(p))*u_i.
+    // Thus we store the numerator as the affine function -Λ,
+    // since the generators are already stored in the denominator.
+    // Note that the outer -1 will have to be accounted for, as it is not stored.
+    // See end for an example.
 
-        // The numerator is ceil(c) @ rays.
-        numerator = generators.preMultiplyWithRow(coefficients);
+    ParamPoint numerator(vertex.getNumColumns(), vertex.getNumRows());
+    SmallVector<Fraction> ithCol(vertex.getNumRows());
+    for (unsigned i = 0; i < vertex.getNumColumns(); i++)
+    {
+        for (unsigned j = 0; j < vertex.getNumRows(); j++)
+            ithCol[j] = vertex(j, i);
+        numerator.setRow(i, transp.preMultiplyWithRow(ithCol));
+        numerator.negateRow(i);
     }
 
     GeneratingFunction gf(SmallVector<int>(1, sign),
-              std::vector({numerator}),
-              std::vector({denominator}));
+                          std::vector({numerator}),
+                          std::vector({denominator}));
  
     return gf;
+
+    // Suppose the vertex is given by the matrix [ 2  2   0], with 2 params
+    //                                           [-1 -1/2 1]
+    // And the cone has H-representation [0  -1] => U-matrix [ 2 -1]
+    //                                   [-1 -2]             [-1  0]
+    // Therefore Λ will be given by [ 1    0 ] and the negation of this will be stored as the numerator.
+    //                              [ 1/2 -1 ]
+    //                              [ -1  -2 ]
+
+    // Algebraically, the numerator exponent is
+    // [ -2 ⌊ -N - M/2 +1 ⌋ + 1 ⌊ 0 +M +2 ⌋ ] -> first  COLUMN of U is [2, -1]
+    // [  1 ⌊ -N - M/2 +1 ⌋ + 0 ⌊ 0 +M +2 ⌋ ] -> second COLUMN of U is [-1, 0]
 }
 
 std::optional<ParamPoint> mlir::presburger::findVertex(Matrix<MPInt> equations)
@@ -389,7 +401,7 @@ std::optional<ParamPoint> mlir::presburger::findVertex(Matrix<MPInt> equations)
     Matrix<MPInt> coeffs(r, r);
     for (unsigned i = 0; i < r; i++)
         for (unsigned j = 0; j < r; j++)
-            coeffs(i, j) = equations(i, j), 1;
+            coeffs(i, j) = equations(i, j);
     
     if (coeffs.determinant() == MPInt(0))
         return std::nullopt;
@@ -434,14 +446,15 @@ std::optional<ParamPoint> mlir::presburger::findVertex(Matrix<MPInt> equations)
     return vertex;
 }
 
-GeneratingFunction mlir::presburger::polytopeGeneratingFunction(PolyhedronH poly)
+std::vector<std::pair<PresburgerRelation, GeneratingFunction>> mlir::presburger::polytopeGeneratingFunction(PolyhedronH poly)
 {
     unsigned d = poly.getNumRangeVars(); 
     unsigned p = poly.getNumSymbolVars();
     unsigned n = poly.getNumInequalities();
 
     SmallVector<std::pair<int, ConeH>, 4> unimodCones;
-    GeneratingFunction gf({}, {}, {});
+    GeneratingFunction chamberGf({}, {}, {});
+    std::vector<std::pair<PresburgerRelation, GeneratingFunction>> gf({});
     ConeH tgtCone = defineHRep(d, d);
 
     Matrix<MPInt> subset(d, d+p+1);
@@ -487,7 +500,7 @@ GeneratingFunction mlir::presburger::polytopeGeneratingFunction(PolyhedronH poly
                 // [A2 | B2 | c2]
             }
 
-        vertex = findVertex(subset);
+        vertex = findVertex(subset); // d x (p+1)
 
         if (vertex == std::nullopt) continue;
         vertices.push_back(*vertex);
@@ -539,6 +552,7 @@ GeneratingFunction mlir::presburger::polytopeGeneratingFunction(PolyhedronH poly
                     isFullDim = true;
                     break;
                 }
+            isFullDim = (p == 0) || isFullDim;
             if (!isFullDim) newChambers.push_back(chambers[i]);
             else
             {
@@ -573,6 +587,7 @@ GeneratingFunction mlir::presburger::polytopeGeneratingFunction(PolyhedronH poly
     SmallVector<MPInt> ineq(d+1);
     for (auto chamber : chambers)
     {
+        chamberGf = GeneratingFunction({}, {}, {});
         for (unsigned i : chamber.second)
         {
             tgtCone = defineHRep(d, d);
@@ -584,9 +599,10 @@ GeneratingFunction mlir::presburger::polytopeGeneratingFunction(PolyhedronH poly
                 tgtCone.addInequality(ineq);
             }
             unimodCones = unimodularDecomposition(tgtCone);
-            // TODO
-            // Define generating function computation for parametric cone.
+            for (auto signedCone : unimodCones)
+                chamberGf = chamberGf + unimodularConeGeneratingFunction(vertices[i], signedCone.first, signedCone.second);
         }
+        gf.push_back(std::make_pair(chamber.first, chamberGf));
     }
     return gf;
 }
@@ -636,7 +652,7 @@ Point getNonOrthogonalVector(std::vector<Point> vectors)
     return newPoint;
 }
 
-Fraction mlir::presburger::getCoefficientInRationalFunction(int power, std::vector<Fraction> num, std::vector<Fraction> den)
+QuasiPolynomial mlir::presburger::getCoefficientInRationalFunction(int power, std::vector<QuasiPolynomial> num, std::vector<Fraction> den)
 {
     // Let P[i] denote the coefficient of s^i in the L. polynomial P(s).
     // (P/Q)[r] =
@@ -647,42 +663,71 @@ Fraction mlir::presburger::getCoefficientInRationalFunction(int power, std::vect
     if (power == 0)
         return (num[0] / den[0]);
 
-    Fraction t;
+    QuasiPolynomial t;
     if (power < num.size()) t = num[power];
-    else t = Fraction(0, 1);
+    else t = QuasiPolynomial(Fraction(0, 1));
     for (int i = 1; (unsigned)i < (power+1 < den.size() ? power+1 : den.size()); i++)
-        t = t - den[i] * getCoefficientInRationalFunction(power-i, num, den);
+        t = t - getCoefficientInRationalFunction(power-i, num, den) * den[i];
     return (t / den[0]);
 }
 
 // Substitute the generating function with the unit vector
 // to find the number of terms.
-Fraction mlir::presburger::substituteWithUnitVector(GeneratingFunction gf)
+QuasiPolynomial mlir::presburger::substituteWithUnitVector(GeneratingFunction gf)
 {
     std::vector<Point> allDenominators;
     for (std::vector<Point> den : gf.denominators)
         allDenominators.insert(allDenominators.end(), den.begin(), den.end());
     Point mu = getNonOrthogonalVector(allDenominators);
 
-    Fraction term;
-    int sign; Point v; std::vector<Point> ds;
-    Fraction num; std::vector<Fraction> dens;
+    unsigned num_params = gf.numerators[0].getNumRows()-1;
+    unsigned num_dims = mu.size();
+    unsigned num_terms = gf.denominators.size();
+
+    QuasiPolynomial term;
+    int sign; ParamPoint v(num_params+1, num_dims); std::vector<Point> ds;
+    QuasiPolynomial num;
+    std::vector<Fraction> dens;
     int numNegExps; Fraction sumNegExps;
-    std::vector<Fraction> numeratorCoefficients, singleTermDenCoefficients, denominatorCoefficients;
+
+    std::vector<QuasiPolynomial> numeratorCoefficients;
+    std::vector<Fraction> singleTermDenCoefficients, denominatorCoefficients;
     std::vector<std::vector<Fraction>> eachTermDenCoefficients;
     std::vector<Fraction> convolution;
+
     unsigned convlen = 0; Fraction sum;
     unsigned r;
 
-    Fraction totalTerm = Fraction(0, 1);
+    QuasiPolynomial totalTerm = Fraction(0, 1);
     for (unsigned i = 0; i < gf.signs.size(); i++)
     {
         sign = gf.signs[i]; v = gf.numerators[i]; ds = gf.denominators[i];
 
         // Substitute x_i = (s+1)^μ_i
-        num = Fraction(0, 1);
-        for (unsigned j = 0; j < v.size(); j++)
-            num = num + v[j] * mu[j];
+        // Then the numerator becomes
+        // -(μ • u_1) * (floor(first col of v)) -(μ • u_2) * (floor(second col of v))
+        // So we store the negation of the  dot produts.
+
+        num.params = num_params;
+        // We have d terms, each of whose coefficient is the negative dot product.
+        num.coefficients = SmallVector<Fraction>(num_dims);
+        for (unsigned j = 0; j < num_dims; j++)
+        {
+            num.coefficients[j] = Fraction(0, 1);
+            for (unsigned k = 0; k < num_dims; k++)
+                num.coefficients[j] = num.coefficients[j] + mu[k] * ds[j][k];
+            num.coefficients[j] = - num.coefficients[j];
+        }
+        // and whose affine fn is a single floor expression.
+        num.affine = std::vector<std::vector<SmallVector<Fraction>>>(num_dims);
+        for (unsigned j = 0; j < num_dims; j++)
+        {
+            SmallVector<Fraction> jthCol(num_params+1);
+            for (unsigned k = 0; k < num_params+1; k++)
+                jthCol[k] = v(k, j);
+            num.affine[j] = {jthCol};
+        }
+
         // Now the numerator is (s+1)^num
 
         dens.clear();
@@ -714,7 +759,7 @@ Fraction mlir::presburger::substituteWithUnitVector(GeneratingFunction gf)
         // -(1 - (s+1)^c) in the denominator and
         // increase the numerator by c.
         if (numNegExps % 2 == 1) sign = - sign;
-        num = num - sumNegExps;
+        num.constant = -sumNegExps;
 
         // Take all the (-s) out, from line 495
         r = dens.size();
@@ -729,10 +774,12 @@ Fraction mlir::presburger::substituteWithUnitVector(GeneratingFunction gf)
         // P(s)/Q(s).
 
         // First, the coefficients of P(s), which are binomial coefficients.
+        // We need r+1 of these.
         numeratorCoefficients.clear();
-        numeratorCoefficients.push_back(1);
-        for (int j = 1; j <= num; j++)
-            numeratorCoefficients.push_back(numeratorCoefficients[j-1] * (num + 1 - j) / j);
+        numeratorCoefficients.push_back(Fraction(1, 1)); // Coeff of s^0
+        for (unsigned j = 1; j <= r; j++)
+            numeratorCoefficients.push_back(numeratorCoefficients[j-1] * (num - (j-1)) / Fraction(j, 1));
+            // Coeff of s^j
         
         // Then the coefficients of each individual term in Q(s),
         // which are (di+1) C (k+1) for 0 ≤ k ≤ di
@@ -742,7 +789,7 @@ Fraction mlir::presburger::substituteWithUnitVector(GeneratingFunction gf)
             singleTermDenCoefficients.clear();
             singleTermDenCoefficients.push_back(den+Fraction(1, 1));
             for (unsigned j = 1; j <= den; j++)
-                singleTermDenCoefficients.push_back(singleTermDenCoefficients[j-1] * (den + 1 - j) / (j + 1));
+                singleTermDenCoefficients.push_back(singleTermDenCoefficients[j-1] * (den - (j-1)) / (j + 1));
 
             eachTermDenCoefficients.push_back(singleTermDenCoefficients);
         }
@@ -773,16 +820,19 @@ Fraction mlir::presburger::substituteWithUnitVector(GeneratingFunction gf)
         }
 
         term = getCoefficientInRationalFunction(r, numeratorCoefficients, denominatorCoefficients);
-        totalTerm = totalTerm + Fraction(sign, 1) * term;
+        totalTerm = totalTerm + term * Fraction(sign, 1);
     }
 
     return totalTerm;
 
 }
 
-MPInt mlir::presburger::countIntegerPoints(PolyhedronH poly)
+std::vector<std::pair<PresburgerRelation, QuasiPolynomial>> mlir::presburger::countIntegerPoints(PolyhedronH poly)
 {
-    GeneratingFunction gf = polytopeGeneratingFunction(poly);
-    Fraction f = substituteWithUnitVector(gf);
-    return f.getAsInteger();
+    std::vector<std::pair<PresburgerRelation, GeneratingFunction>> gf = polytopeGeneratingFunction(poly);
+    std::vector<std::pair<PresburgerRelation, QuasiPolynomial>> count({});
+    QuasiPolynomial qp;
+    for (auto chamber : gf)
+        count.push_back(std::make_pair(chamber.first, substituteWithUnitVector(chamber.second)));
+    return count;
 }

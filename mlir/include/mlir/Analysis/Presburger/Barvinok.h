@@ -40,7 +40,7 @@ using Point = SmallVector<Fraction>;
 class GeneratingFunction
 {
 public:
-    GeneratingFunction(SmallVector<int, 16> s, std::vector<Point> nums, std::vector<std::vector<Point>> dens)
+    GeneratingFunction(SmallVector<int, 16> s, std::vector<ParamPoint> nums, std::vector<std::vector<Point>> dens)
         : signs(s), numerators(nums), denominators(dens) {};
 
     bool operator==(const GeneratingFunction &gf) const
@@ -62,10 +62,11 @@ public:
         if (signs[0] == 1) os << "+";
         else os << "-";
 
-        os << "*(x^[";
-        for (unsigned i = 0; i < numerators[0].size()-1; i++)
-            os << numerators[0][i] << ",";
-        os << numerators[0][numerators[0].size()-1] << "])/";
+        os << "*(x^[paramVec])/";
+        //os << "*(x^[";
+        //for (unsigned i = 0; i < numerators[0].size()-1; i++)
+        //    os << numerators[0][i] << ",";
+        //os << numerators[0][numerators[0].size()-1] << "])/";
 
         for (Point den : denominators[0])
         {
@@ -80,10 +81,11 @@ public:
             if (signs[i] == 1) os << "+";
             else os << "-";
 
-            os << "*(x^[";
-            for (unsigned j = 0; j < numerators[i].size()-1; j++)
-                os << numerators[i][j] << ",";
-            os << numerators[i][numerators[i].size()-1] << "])/";
+            os << "*(x^[paramVec])/";
+            //os << "*(x^[";
+            //for (unsigned j = 0; j < numerators[i].size()-1; j++)
+            //    os << numerators[i][j] << ",";
+            //os << numerators[i][numerators[i].size()-1] << "])/";
 
             for (Point den : denominators[i])
             {
@@ -97,8 +99,79 @@ public:
     }
 
     SmallVector<int, 16> signs;
-    std::vector<Point> numerators;
+    std::vector<ParamPoint> numerators;
     std::vector<std::vector<Point>> denominators;
+};
+
+class QuasiPolynomial
+{
+public:
+    QuasiPolynomial(int par = 0,
+                    SmallVector<Fraction> coeffs = {},
+                    std::vector<std::vector<SmallVector<Fraction>>> aff = {},
+                    Fraction cons = Fraction(0, 1)) :
+        params(par), coefficients(coeffs), affine(aff), constant(cons) {};
+    
+    QuasiPolynomial(Fraction cons) :
+        params(0), coefficients({}), affine({}), constant(cons) {};
+
+    QuasiPolynomial(QuasiPolynomial const&) = default; //:
+        //params(qp.params), coefficients(qp.coefficients), affine(qp.affine), constant(qp.constant) {};
+
+    int params;
+    SmallVector<Fraction> coefficients;
+    std::vector<std::vector<SmallVector<Fraction>>> affine;
+    Fraction constant;
+
+    // All the operations assume that the number of parameters is equal.
+    QuasiPolynomial operator+(const QuasiPolynomial &x)
+    {
+        coefficients.append(x.coefficients);
+        affine.insert(affine.end(), x.affine.begin(), x.affine.end());
+        constant = constant + x.constant;
+        return *this;
+    }
+    QuasiPolynomial operator-(const QuasiPolynomial &x)
+    {
+        QuasiPolynomial qp(x.params, x.coefficients, x.affine, x.constant);
+        for (unsigned i = 0; i < x.coefficients.size(); i++)
+            qp.coefficients[i] = - qp.coefficients[i];
+        return (*this + qp);
+    };
+    QuasiPolynomial operator*(const QuasiPolynomial &x)
+    {
+        QuasiPolynomial qp(params);
+        std::vector<SmallVector<Fraction>> product;
+        for (unsigned i = 0; i < coefficients.size(); i++)
+        {
+            for (unsigned j = 0; j < x.coefficients.size(); j++)
+            {
+                qp.coefficients.append({coefficients[i] * x.coefficients[j]});
+                product.clear();
+                product.insert(product.end(), affine[i].begin(), affine[i].end());
+                product.insert(product.end(), x.affine[j].begin(), x.affine[j].end());
+                qp.affine.push_back(product);
+            }
+            qp.coefficients.append({coefficients[i] * x.constant});
+            qp.affine.push_back(affine[i]);
+        }
+        for (unsigned j = 0; j < x.coefficients.size(); j++)
+        {
+            qp.coefficients.append({constant * x.coefficients[j]});
+            qp.affine.push_back(x.affine[j]);
+        }
+        qp.constant = constant * x.constant;
+
+        return qp;
+    };
+    QuasiPolynomial operator/(Fraction x)
+    {
+        for (unsigned i = 0; i < coefficients.size(); i++)
+            coefficients[i] = coefficients[i] / x;
+        constant = constant / x;
+        return *this;
+    };
+
 };
 
 inline ConeH defineHRep(int num_ineqs, int num_vars, int num_params = 0)
@@ -139,27 +212,27 @@ Matrix<MPInt> generatorsToNormals(ConeV);
 SmallVector<ConeV, 16> triangulate(ConeV);
 
 // Compute the generating function for a unimodular cone.
-GeneratingFunction unimodularConeGeneratingFunction(Point, int, ConeH);
+GeneratingFunction unimodularConeGeneratingFunction(ParamPoint, int, ConeH);
 
 // Compute the (parametric) vertex from a subset of inequalities, if any such exists.
 std::optional<ParamPoint> findVertex(Matrix<MPInt>);
 
 // Compute the generating function for a polytope,
 // as the sum of generating functions of its tangent cones.
-GeneratingFunction polytopeGeneratingFunction(PolyhedronH);
+std::vector<std::pair<PresburgerRelation, GeneratingFunction>> polytopeGeneratingFunction(PolyhedronH);
 
 // Find the coefficient of a given power of s
 // in a rational function given by P(s)/Q(s).
-Fraction getCoefficientInRationalFunction(int, std::vector<Fraction>, std::vector<Fraction>);
+QuasiPolynomial getCoefficientInRationalFunction(int, std::vector<QuasiPolynomial>, std::vector<Fraction>);
 
 // Substitute the generating function with the unit vector
 // to find the number of terms.
-Fraction substituteWithUnitVector(GeneratingFunction);
+QuasiPolynomial substituteWithUnitVector(GeneratingFunction);
 
 // Count the number of integer points in a polytope,
 // by chaining together `polytopeGeneratingFunction`
 // and `substituteWithUnitVector`.
-MPInt countIntegerPoints(PolyhedronH);
+std::vector<std::pair<PresburgerRelation, QuasiPolynomial>> countIntegerPoints(PolyhedronH);
 
 } // namespace presburger
 } // namespace mlir
