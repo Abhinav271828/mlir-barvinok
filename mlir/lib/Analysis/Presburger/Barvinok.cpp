@@ -668,7 +668,7 @@ QuasiPolynomial mlir::presburger::getCoefficientInRationalFunction(int power, st
     else t = QuasiPolynomial(Fraction(0, 1));
     for (int i = 1; (unsigned)i < (power+1 < den.size() ? power+1 : den.size()); i++)
         t = t - getCoefficientInRationalFunction(power-i, num, den) * den[i];
-    return (t / den[0]);
+    return (t / den[0]).reduce();
 }
 
 // Substitute the generating function with the unit vector
@@ -779,7 +779,7 @@ QuasiPolynomial mlir::presburger::substituteWithUnitVector(GeneratingFunction gf
         numeratorCoefficients.clear();
         numeratorCoefficients.push_back(Fraction(1, 1)); // Coeff of s^0
         for (unsigned j = 1; j <= r; j++)
-            numeratorCoefficients.push_back((numeratorCoefficients[j-1] * (num - Fraction(j-1, 0)) / Fraction(j, 1)).reduce());
+            numeratorCoefficients.push_back((numeratorCoefficients[j-1] * (num - Fraction(j-1, 1)) / Fraction(j, 1)).reduce());
             // Coeff of s^j
         
         // Then the coefficients of each individual term in Q(s),
@@ -790,7 +790,7 @@ QuasiPolynomial mlir::presburger::substituteWithUnitVector(GeneratingFunction gf
             singleTermDenCoefficients.clear();
             singleTermDenCoefficients.push_back(den+Fraction(1, 1));
             for (unsigned j = 1; j <= den; j++)
-                singleTermDenCoefficients.push_back(singleTermDenCoefficients[j-1] * (den - (j-1)) / (j + 1));
+                singleTermDenCoefficients.push_back(singleTermDenCoefficients[j-1] * (den - Fraction(j-1, 1)) / Fraction(j+1, 1));
 
             eachTermDenCoefficients.push_back(singleTermDenCoefficients);
         }
@@ -824,7 +824,7 @@ QuasiPolynomial mlir::presburger::substituteWithUnitVector(GeneratingFunction gf
         totalTerm = totalTerm + term * Fraction(sign, 1);
     }
 
-    return totalTerm;
+    return totalTerm.reduce();
 
 }
 
