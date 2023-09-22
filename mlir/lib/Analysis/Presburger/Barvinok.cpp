@@ -727,6 +727,7 @@ QuasiPolynomial mlir::presburger::substituteWithUnitVector(GeneratingFunction gf
                 jthCol[k] = v(k, j);
             num.affine[j] = {jthCol};
         }
+        num = num.reduce();
 
         // Now the numerator is (s+1)^num
 
@@ -778,7 +779,7 @@ QuasiPolynomial mlir::presburger::substituteWithUnitVector(GeneratingFunction gf
         numeratorCoefficients.clear();
         numeratorCoefficients.push_back(Fraction(1, 1)); // Coeff of s^0
         for (unsigned j = 1; j <= r; j++)
-            numeratorCoefficients.push_back(numeratorCoefficients[j-1] * (num - (j-1)) / Fraction(j, 1));
+            numeratorCoefficients.push_back((numeratorCoefficients[j-1] * (num - Fraction(j-1, 0)) / Fraction(j, 1)).reduce());
             // Coeff of s^j
         
         // Then the coefficients of each individual term in Q(s),
