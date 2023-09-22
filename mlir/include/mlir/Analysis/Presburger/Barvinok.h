@@ -126,7 +126,6 @@ public:
     {
         coefficients.append(x.coefficients);
         affine.insert(affine.end(), x.affine.begin(), x.affine.end());
-        //constant = constant + x.constant;
         return *this;
     }
     QuasiPolynomial operator-(const QuasiPolynomial &x)
@@ -170,6 +169,32 @@ public:
         return *this;
     };
 
+    // Removes terms which evaluate to zero from the expression.
+    QuasiPolynomial reduce()
+    {
+        SmallVector<Fraction> newCoeffs({});
+        std::vector<std::vector<SmallVector<Fraction>>> newAffine({}); 
+        bool prodIsNonz, sumIsNonz;
+        for (unsigned i = 0; i < coefficients.size(); i++)
+        {
+            prodIsNonz = true;
+            for (unsigned j = 0; j < affine[i].size(); j++)
+            {
+                sumIsNonz = false;
+                for (unsigned k = 0; k < affine[i][j].size(); k++)
+                    if (affine[i][j][k] != Fraction(0, 1))
+                        sumIsNonz = true;
+                if (sumIsNonz == false)
+                    prodIsNonz = false;
+            }
+            if (prodIsNonz == true && coefficients[i] != Fraction(0, 1))
+            {
+                newCoeffs.append({coefficients[i]});
+                newAffine.push_back({affine[i]});
+            }
+        }
+        return QuasiPolynomial(params, newCoeffs, newAffine);
+    }
 };
 
 inline ConeH defineHRep(int num_ineqs, int num_vars, int num_params = 0)
