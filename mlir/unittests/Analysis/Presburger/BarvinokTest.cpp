@@ -294,16 +294,16 @@ TEST(BarvinokTest, unimodGenFunc) {
 TEST(BarvinokTest, getCoefficientInRationalFunction) {
     std::vector<QuasiPolynomial> numeratorCoefficients;
     std::vector<Fraction> singleTermDenCoefficients, denominatorCoefficients, convolution;
-    int convlen; Fraction sum;
+    unsigned convlen; Fraction sum;
     std::vector<std::vector<Fraction>> eachTermDenCoefficients;
 
     QuasiPolynomial num = Fraction(20, 1);
     std::vector<Fraction> dens = {Fraction(8, 1), Fraction(6, 1), Fraction(1, 1)};
 
     numeratorCoefficients.clear();
-    numeratorCoefficients.push_back(1);
+    numeratorCoefficients.push_back(Fraction(1, 1));
     for (int j = 1; j <= 20; j++)
-        numeratorCoefficients.push_back(numeratorCoefficients[j-1] * (num + 1 - j) / j);
+        numeratorCoefficients.push_back((numeratorCoefficients[j-1] * (num - Fraction(j-1, 1)) / Fraction(j, 1)).reduce());
         
     // Then the coefficients of each individual term in Q(s),
     // which are (di+1) C (k+1) for 0 ≤ k ≤ di
@@ -342,7 +342,11 @@ TEST(BarvinokTest, getCoefficientInRationalFunction) {
 
     QuasiPolynomial coeff = getCoefficientInRationalFunction(3, numeratorCoefficients, denominatorCoefficients);
     // Wrong
-    //EXPECT_EQ(coeff.constant, Fraction(4531, 3024));
+    Fraction c = 0;
+    for (unsigned i = 0; i < coeff.coefficients.size(); i++)
+        if (coeff.affine[i].size() == 0)
+            c = c + coeff.coefficients[i];
+    EXPECT_EQ(c, Fraction(4531, 3024));
 }
 
 TEST(BarvinokTest, substituteWithUnitVector) {
@@ -358,9 +362,37 @@ TEST(BarvinokTest, substituteWithUnitVector) {
                                                     SmallVector<Fraction>({0, 1})})}));
 
     QuasiPolynomial numPoints = substituteWithUnitVector(gf);
-    // Constant term evaluates to 5/4 for some reason.
-    // Other two terms are correct.
-    EXPECT_EQ(numPoints.coefficients[i], Fraction(0, 1));
+    EXPECT_EQ(numPoints.coefficients, SmallVector<Fraction>({Fraction(-1, 2), Fraction(-1, 2), Fraction(1, 2), Fraction(-1, 2),
+                                                             Fraction(-1, 2), Fraction(1, 2), Fraction(1, 1), Fraction(3, 2),
+                                                             Fraction(-1, 2), Fraction(3, 2), Fraction(9, 4), Fraction(-3, 4),
+                                                             Fraction(-1, 2), Fraction(-3, 4), Fraction(1, 8), Fraction(1, 8)}));
+    EXPECT_EQ(numPoints.affine, std::vector<std::vector<Point>>({{{Fraction(1, 2), Fraction(0, 1)}, {Fraction(1, 2), Fraction(0, 1)}},
+                                                                 {{Fraction(1, 2), Fraction(0, 1)}},
+                                                                 {{Fraction(1, 2), Fraction(0, 1)}},
+                                                                 {{Fraction(1, 2), Fraction(0, 1)}},
+                                                                 {}, {},
+                                                                 {{Fraction(1, 2), Fraction(0, 1)}, {Fraction(1, 2), Fraction(0, 1)}},
+                                                                 {{Fraction(1, 2), Fraction(0, 1)}},
+                                                                 {{Fraction(1, 2), Fraction(0, 1)}},
+                                                                 {{Fraction(1, 2), Fraction(0, 1)}},
+                                                                 {}, {},
+                                                                 {{Fraction(1, 2), Fraction(0, 1)}},
+                                                                 {}, {}, {}}));
+
+    // We can gather the like terms because we know there's only
+    // either ⌊p/2⌋^2, ⌊p/2⌋, or constants.
+    Fraction pSquaredCoeff = 0, pCoeff = 0, constantTerm = 0;
+    for (unsigned i = 0; i < numPoints.coefficients.size(); i++)
+        if (numPoints.affine[i].size() == 2)
+            pSquaredCoeff = pSquaredCoeff + numPoints.coefficients[i];
+        else if (numPoints.affine[i].size() == 1)
+            pCoeff = pCoeff + numPoints.coefficients[i];
+        else
+            constantTerm = constantTerm + numPoints.coefficients[i];
+        
+    EXPECT_EQ(pSquaredCoeff, Fraction(1, 2));
+    EXPECT_EQ(pCoeff, Fraction(3, 2));
+    EXPECT_EQ(constantTerm, Fraction(1, 1));
 }
 
 TEST(BarvinokTest, findVertex) {
