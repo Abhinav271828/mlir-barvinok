@@ -19,6 +19,7 @@
 #include "llvm/ADT/SmallBitVector.h"
 
 #include "mlir/Analysis/Presburger/Matrix.h"
+#include "mlir/Analysis/Presburger/QuasiPolynomial.h"
 #include <optional>
 
 namespace mlir {
@@ -288,6 +289,14 @@ std::vector<Fraction> multiplyPolynomials(ArrayRef<Fraction> a,
 
 bool isRangeZero(ArrayRef<Fraction> arr);
 
+/// Find the coefficient of a given power of s in a rational function
+/// given by P(s)/Q(s), where
+/// P is a polynomial, in which the coefficients are QuasiPolynomials
+/// over d parameters (distinct from s), and
+/// and Q is a polynomial with Fraction coefficients.
+QuasiPolynomial getCoefficientInRationalFunction(unsigned power,
+                                                 ArrayRef<QuasiPolynomial> num,
+                                                 ArrayRef<Fraction> den);
 } // namespace presburger
 } // namespace mlir
 

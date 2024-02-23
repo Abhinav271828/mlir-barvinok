@@ -16,6 +16,8 @@
 
 #include "mlir/Analysis/Presburger/Fraction.h"
 #include "mlir/Analysis/Presburger/Matrix.h"
+#include "mlir/Analysis/Presburger/PresburgerRelation.h"
+#include "mlir/Analysis/Presburger/QuasiPolynomial.h"
 #include "llvm/ADT/Sequence.h"
 
 namespace mlir {
@@ -92,6 +94,18 @@ public:
                               sumDenominators);
   }
 
+  /// Find the number of terms in the generating function, as
+  /// a quasipolynomial in the parameter space of the input function.
+  /// The generating function must be such that for all values of the
+  /// parameters, the number of terms is finite.
+  QuasiPolynomial computeNumTerms() const;
+
+  /// Find a vector that is not orthogonal to any of the exponents in the
+  /// terms' denominators, i.e., has nonzero dot product with those of the
+  /// denominator exponents that are not null.
+  /// If any of the vectors is null, it is ignored.
+  Point getNonOrthogonalVector() const;
+
   llvm::raw_ostream &print(llvm::raw_ostream &os) const {
     for (int i : llvm::seq<int>(0, signs.size())) {
       if (i == 0) {
@@ -132,6 +146,41 @@ private:
   SmallVector<int> signs;
   std::vector<ParamPoint> numerators;
   std::vector<std::vector<Point>> denominators;
+};
+
+// A class that encodes the count of lattice points in a rational parametric
+// polyhedron.
+// It maintains a partition of the parameter space into regions (chambers), in
+// each of which the count is given by a specific generating function.
+// This partition satisfies the properties that
+// * the union of all chambers is the complete parameter space.
+// * the intersection of any two chambers is not full-dimensional.
+class PiecewiseGF {
+public:
+  // The initial value is simply the universe, associated with an empty
+  // generating function.
+  PiecewiseGF(unsigned numSymbols)
+      : chambers({{PresburgerSet::getUniverse(
+                       PresburgerSpace::getSetSpace(numSymbols)),
+                   GeneratingFunction(numSymbols, {}, {}, {})}}){};
+
+  unsigned size() { return chambers.size(); };
+
+  PresburgerSet getRegion(unsigned index) { return chambers[index].first; };
+
+  GeneratingFunction getGeneratingFunction(unsigned index) {
+    return chambers[index].second;
+  };
+
+  // Given a generating function and its corresponding region of activity,
+  // update the chamber-GF list by finding where the region intersects the
+  // current partitions and partitioning them further if needed.
+  void updateWithGF(const PresburgerSet &region, const GeneratingFunction &gf);
+
+  Fraction evaluateAt(SmallVector<Fraction> parameters);
+
+private:
+  std::vector<std::pair<PresburgerSet, GeneratingFunction>> chambers;
 };
 
 } // namespace detail

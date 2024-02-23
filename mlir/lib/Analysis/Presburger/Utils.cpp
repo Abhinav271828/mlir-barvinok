@@ -570,3 +570,51 @@ std::vector<Fraction> presburger::multiplyPolynomials(ArrayRef<Fraction> a,
 bool presburger::isRangeZero(ArrayRef<Fraction> arr) {
   return llvm::all_of(arr, [&](Fraction f) { return f == 0; });
 }
+
+/// We use the following recursive formula to find the coefficient of
+/// s^power in the rational function given by P(s)/Q(s).
+///
+/// Let P[i] denote the coefficient of s^i in the polynomial P(s).
+/// (P/Q)[r] =
+/// if (r == 0) then
+///   P[0]/Q[0]
+/// else
+///   (P[r] - {Σ_{i=1}^r (P/Q)[r-i] * Q[i])}/(Q[0])
+/// We therefore recursively call `getCoefficientInRationalFunction` on
+/// all i \in [0, power).
+///
+/// https://math.ucdavis.edu/~deloera/researchsummary/
+/// barvinokalgorithm-latte1.pdf, p. 1285
+QuasiPolynomial presburger::getCoefficientInRationalFunction(
+    unsigned power, ArrayRef<QuasiPolynomial> num, ArrayRef<Fraction> den) {
+  assert(den.size() != 0 &&
+         "division by empty denominator in rational function!");
+
+  unsigned numParam = num[0].getNumInputs();
+  // We use the `isEqual` method of PresburgerSpace, which QuasiPolynomial
+  // inherits from.
+  assert(
+      llvm::all_of(
+          num, [&](const QuasiPolynomial &qp) { return num[0].isEqual(qp); }) &&
+      "the quasipolynomials should all belong to the same space!");
+
+  std::vector<QuasiPolynomial> coefficients;
+  coefficients.reserve(power + 1);
+
+  coefficients.push_back(num[0] / den[0]);
+  for (unsigned i : llvm::seq<int>(1, power + 1)) {
+    // If the power is not there in the numerator, the coefficient is zero.
+    coefficients.push_back(i < num.size() ? num[i]
+                                          : QuasiPolynomial(numParam, 0));
+
+    // After den.size(), the coefficients are zero, so we stop
+    // subtracting at that point (if it is less than i).
+    unsigned limit = std::min<unsigned long>(i, den.size() - 1);
+    for (int j : llvm::seq<int>(1, limit + 1))
+      coefficients[i] = coefficients[i] -
+                        coefficients[i - j] * QuasiPolynomial(numParam, den[j]);
+
+    coefficients[i] = coefficients[i] / den[0];
+  }
+  return coefficients[power].simplify();
+}

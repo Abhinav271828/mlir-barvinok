@@ -111,37 +111,14 @@ std::optional<ParamPoint> solveParametricEquations(FracMatrix equations);
 /// The returned list partitions the universe into parts depending on which
 /// subset of GFs is active there, and gives the sum of active GFs for each
 /// part.
-std::vector<std::pair<PresburgerSet, GeneratingFunction>>
-computeChamberDecomposition(
+PiecewiseGF computeChamberDecomposition(
     unsigned numSymbols, ArrayRef<std::pair<PresburgerSet, GeneratingFunction>>
                              regionsAndGeneratingFunctions);
 
 /// Compute the generating function corresponding to a polytope.
 ///
 /// All tangent cones of the polytope must be unimodular.
-std::vector<std::pair<PresburgerSet, GeneratingFunction>>
-computePolytopeGeneratingFunction(const PolyhedronH &poly);
-
-/// Find a vector that is not orthogonal to any of the given vectors,
-/// i.e., has nonzero dot product with those of the given vectors
-/// that are not null.
-/// If any of the vectors is null, it is ignored.
-Point getNonOrthogonalVector(ArrayRef<Point> vectors);
-
-/// Find the coefficient of a given power of s in a rational function
-/// given by P(s)/Q(s), where
-/// P is a polynomial, in which the coefficients are QuasiPolynomials
-/// over d parameters (distinct from s), and
-/// and Q is a polynomial with Fraction coefficients.
-QuasiPolynomial getCoefficientInRationalFunction(unsigned power,
-                                                 ArrayRef<QuasiPolynomial> num,
-                                                 ArrayRef<Fraction> den);
-
-/// Find the number of terms in a generating function, as
-/// a quasipolynomial in the parameter space of the input function.
-/// The generating function must be such that for all values of the
-/// parameters, the number of terms is finite.
-QuasiPolynomial computeNumTerms(const GeneratingFunction &gf);
+PiecewiseGF computePolytopeGeneratingFunction(const PolyhedronH &poly);
 
 } // namespace detail
 } // namespace presburger

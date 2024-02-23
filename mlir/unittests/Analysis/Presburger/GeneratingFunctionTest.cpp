@@ -37,3 +37,26 @@ TEST(GeneratingFunctionTest, sum) {
                                {{3, 7}, {5, 1}},
                                {{5, 2}, {6, 2}}}));
 }
+
+// The vectors used as denominators are randomly generated.
+// We then check that the output of the function has non-zero
+// dot product with all non-null denominators.
+TEST(GeneratingFunctionTest, getNonOrthogonalVector) {
+  std::vector<Point> vectors = {Point({1, 2, 3, 4}), Point({-1, 0, 1, 1}),
+                                Point({2, 7, 0, 0}), Point({0, 0, 0, 0})};
+  GeneratingFunction gf(
+      1, {1}, {makeFracMatrix(2, 4, {{0, 0, 0, 0}, {0, 0, 0, 0}})}, {vectors});
+  Point nonOrth = gf.getNonOrthogonalVector();
+
+  for (unsigned i = 0; i < 3; ++i)
+    EXPECT_NE(dotProduct(nonOrth, vectors[i]), 0);
+
+  vectors = {Point({0, 1, 3}), Point({-2, -1, 1}), Point({6, 3, 0}),
+             Point({0, 0, -3}), Point({5, 0, -1})};
+  gf = GeneratingFunction(
+      1, {1}, {makeFracMatrix(2, 3, {{0, 0, 0}, {0, 0, 0}})}, {vectors});
+  nonOrth = gf.getNonOrthogonalVector();
+
+  for (const Point &vector : vectors)
+    EXPECT_NE(dotProduct(nonOrth, vector), 0);
+}

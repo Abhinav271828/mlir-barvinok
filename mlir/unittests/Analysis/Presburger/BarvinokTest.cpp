@@ -85,48 +85,6 @@ TEST(BarvinokTest, unimodularConeGeneratingFunction) {
           {{{8, 47, -17}, {-7, -41, 15}, {1, 5, -2}}}));
 }
 
-// The following vectors are randomly generated.
-// We then check that the output of the function has non-zero
-// dot product with all non-null vectors.
-TEST(BarvinokTest, getNonOrthogonalVector) {
-  std::vector<Point> vectors = {Point({1, 2, 3, 4}), Point({-1, 0, 1, 1}),
-                                Point({2, 7, 0, 0}), Point({0, 0, 0, 0})};
-  Point nonOrth = getNonOrthogonalVector(vectors);
-
-  for (unsigned i = 0; i < 3; ++i)
-    EXPECT_NE(dotProduct(nonOrth, vectors[i]), 0);
-
-  vectors = {Point({0, 1, 3}), Point({-2, -1, 1}), Point({6, 3, 0}),
-             Point({0, 0, -3}), Point({5, 0, -1})};
-  nonOrth = getNonOrthogonalVector(vectors);
-
-  for (const Point &vector : vectors)
-    EXPECT_NE(dotProduct(nonOrth, vector), 0);
-}
-
-// The following polynomials are randomly generated and the
-// coefficients are computed by hand.
-// Although the function allows the coefficients of the numerator
-// to be arbitrary quasipolynomials, we stick to constants for simplicity,
-// as the relevant arithmetic operations on quasipolynomials
-// are tested separately.
-TEST(BarvinokTest, getCoefficientInRationalFunction) {
-  std::vector<QuasiPolynomial> numerator = {
-      QuasiPolynomial(0, 2), QuasiPolynomial(0, 3), QuasiPolynomial(0, 5)};
-  std::vector<Fraction> denominator = {Fraction(1), Fraction(0), Fraction(4),
-                                       Fraction(3)};
-  QuasiPolynomial coeff =
-      getCoefficientInRationalFunction(1, numerator, denominator);
-  EXPECT_EQ(coeff.getConstantTerm(), 3);
-
-  numerator = {QuasiPolynomial(0, -1), QuasiPolynomial(0, 4),
-               QuasiPolynomial(0, -2), QuasiPolynomial(0, 5),
-               QuasiPolynomial(0, 6)};
-  denominator = {Fraction(8), Fraction(4), Fraction(0), Fraction(-2)};
-  coeff = getCoefficientInRationalFunction(3, numerator, denominator);
-  EXPECT_EQ(coeff.getConstantTerm(), Fraction(55, 64));
-}
-
 TEST(BarvinokTest, computeNumTermsCone) {
   // The following test is taken from
   // Verdoolaege, Sven, et al. "Counting integer points in parametric
@@ -141,7 +99,7 @@ TEST(BarvinokTest, computeNumTermsCone) {
        makeFracMatrix(2, 2, {{0, 0}, {0, 0}})},
       {{{-1, 1}, {-1, 0}}, {{1, -1}, {0, -1}}, {{1, 0}, {0, 1}}});
 
-  QuasiPolynomial numPoints = computeNumTerms(gf).collectTerms();
+  QuasiPolynomial numPoints = gf.computeNumTerms().collectTerms();
 
   // First, we make sure that all the affine functions are of the form ⌊p/2⌋.
   for (const std::vector<SmallVector<Fraction>> &term : numPoints.getAffine()) {
@@ -193,7 +151,7 @@ TEST(BarvinokTest, computeNumTermsCone) {
        {{1, 0, 0}, {0, -1, 0}, {0, 0, -1}},
        {{-1, 0, 0}, {0, -1, 0}, {0, 0, -1}}});
 
-  numPoints = computeNumTerms(gf);
+  numPoints = gf.computeNumTerms();
   numPoints = numPoints.collectTerms().simplify();
 
   // First, we make sure all the affine functions are either
@@ -247,12 +205,11 @@ TEST(BarvinokTest, computeNumTermsPolytope) {
                            "-y + 1 >= 0, -z + 1 >= 0)",
                            0);
 
-  std::vector<std::pair<PresburgerSet, GeneratingFunction>> count =
-      computePolytopeGeneratingFunction(poly);
+  PiecewiseGF count = computePolytopeGeneratingFunction(poly);
   // There is only one chamber, as it is non-parametric.
   EXPECT_EQ(count.size(), 9u);
 
-  GeneratingFunction gf = count[0].second;
+  GeneratingFunction gf = count.getGeneratingFunction(0);
   EXPECT_EQ_REPR_GENERATINGFUNCTION(
       gf,
       GeneratingFunction(
@@ -279,7 +236,7 @@ TEST(BarvinokTest, computeNumTermsPolytope) {
   // There is only one chamber: p ≥ 0
   EXPECT_EQ(count.size(), 4u);
 
-  gf = count[0].second;
+  gf = count.getGeneratingFunction(0);
   EXPECT_EQ_REPR_GENERATINGFUNCTION(
       gf, GeneratingFunction(
               1, {1, 1, 1},
@@ -298,6 +255,6 @@ TEST(BarvinokTest, computeNumTermsPolytope) {
 
   EXPECT_EQ(count.size(), 25u);
 
-  gf = count[0].second;
+  gf = count.getGeneratingFunction(0);
   EXPECT_EQ(gf.getNumerators().size(), 24u);
 }
